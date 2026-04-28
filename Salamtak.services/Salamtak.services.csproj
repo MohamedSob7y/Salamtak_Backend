@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Salamtak.Domain\Salamtak.Domain.csproj" />
+    <ProjectReference Include="..\Salamtak.services.Abstractions\Salamtak.services.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
