@@ -11,4 +11,9 @@
     <ProjectReference Include="..\Salamtak.services.Abstractions\Salamtak.services.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Implementation Of Services\" />
+    <Folder Include="Mapping\" />
+  </ItemGroup>
+
 </Project>

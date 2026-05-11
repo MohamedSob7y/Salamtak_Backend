@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Salamtak.services.Abstractions\Salamtak.services.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>

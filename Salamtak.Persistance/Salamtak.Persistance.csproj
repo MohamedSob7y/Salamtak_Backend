@@ -10,4 +10,11 @@
     <ProjectReference Include="..\Salamtak.services\Salamtak.services.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Context\" />
+    <Folder Include="Implementation\Repository\" />
+    <Folder Include="Implementation\Unite Of Work\" />
+    <Folder Include="Configurations\" />
+  </ItemGroup>
+
 </Project>
