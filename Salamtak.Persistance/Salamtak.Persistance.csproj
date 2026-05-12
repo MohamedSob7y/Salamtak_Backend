@@ -11,10 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Context\" />
-    <Folder Include="Implementation\Repository\" />
-    <Folder Include="Implementation\Unite Of Work\" />
-    <Folder Include="Configurations\" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
