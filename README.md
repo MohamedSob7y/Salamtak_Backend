@@ -7,3 +7,7 @@ https://chatgpt.com/share/6a035b05-fbb0-83ea-8407-574292d4811a
 4: MiddleWares 
 5: Seeding Data From Where?
 6: Attachment Services if need?
+
+
+
+https://chatgpt.com/share/6a036111-fa38-83ea-8e64-269221b1e8e1  How To Use Github in this Repository
