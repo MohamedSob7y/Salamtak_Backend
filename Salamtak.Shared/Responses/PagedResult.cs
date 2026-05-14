@@ -1,4 +1,4 @@
-    namespace Salamtak.Shared.Responses;
+namespace Salamtak.Shared.Responses;
 
 public class PagedResult<T>
 {
