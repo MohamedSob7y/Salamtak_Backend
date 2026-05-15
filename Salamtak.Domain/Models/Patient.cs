@@ -19,7 +19,7 @@ namespace Salamtak.Domain.Models
         public string? Address { get; set; }
 
         public double? Height { get; set; }
-
+        public string? BloodType { get; set; }
         public double? Weight { get; set; }
 
         // Navigation Properties

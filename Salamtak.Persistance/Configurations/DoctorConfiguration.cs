@@ -31,7 +31,9 @@ namespace Salamtak.Persistance.Configurations
 
             builder.Property(d => d.ExperienceYears)
                    .IsRequired();
-
+            builder.Property(d => d.ConsultationFee)
+                   .HasColumnType("decimal(10,2)")
+                   .IsRequired(false); 
             builder.Property(d => d.LicenseNumber)
                    .HasMaxLength(100);
 
