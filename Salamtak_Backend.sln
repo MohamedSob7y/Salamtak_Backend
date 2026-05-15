@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Salamtak.Presentation", "Sa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Salamtak.Shared", "Salamtak.Shared\Salamtak.Shared.csproj", "{FD4F5E33-5E30-486E-8144-E98AEB603A0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "External Services", "External Services\External Services.csproj", "{70ED7210-764A-4611-9738-A516B4ECFDEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Salamtak.ExternalServices", "External Services\Salamtak.ExternalServices.csproj", "{70ED7210-764A-4611-9738-A516B4ECFDEA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

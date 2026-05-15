@@ -26,7 +26,7 @@ namespace Salamtak.Domain.Models
 
         public string? CancelReason { get; set; }
 
-        // Navigation Properties
+        public string? Reason { get; set; }
         public Patient Patient { get; set; } = null!;
 
         public Doctor Doctor { get; set; } = null!;

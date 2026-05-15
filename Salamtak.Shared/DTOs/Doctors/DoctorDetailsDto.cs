@@ -1,16 +1,33 @@
 namespace Salamtak.Shared.DTOs.Doctors;
-
 public class DoctorDetailsDto
 {
-    public int DoctorId { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string SpecialtyName { get; set; } = string.Empty;
-    public string Bio { get; set; } = string.Empty;
-    public string LicenseNumber { get; set; } = string.Empty;
-    public decimal ConsultationFee { get; set; }
-    public double Rating { get; set; }
-    public int ReviewsCount { get; set; }
+    public Guid DoctorId { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public string FullName { get; set; } = null!;
+
+    public string Email { get; set; } = null!;
+
+    public string PhoneNumber { get; set; } = null!;
+
+    public Guid SpecialtyId { get; set; }
+
+    public string SpecialtyName { get; set; } = null!;
+
+    public string? Bio { get; set; }
+
+    public int ExperienceYears { get; set; }
+
+    public string? LicenseNumber { get; set; }
+
+    public string VerificationStatus { get; set; } = null!;
+
     public bool IsVerified { get; set; }
+
+    public double AverageRating { get; set; }
+
+    public int ReviewsCount { get; set; }
+
+    public decimal ConsultationFee { get; set; }
 }

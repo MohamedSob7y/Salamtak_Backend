@@ -2,8 +2,13 @@ namespace Salamtak.Shared.DTOs.Notifications;
 
 public class RealtimeNotificationDto
 {
-    public int UserId { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-    public DateTime SentAt { get; set; }
+    public Guid NotificationId { get; set; }
+
+    public string Title { get; set; } = null!;
+
+    public string Message { get; set; } = null!;
+
+    public string Type { get; set; } = null!;
+
+    public DateTime CreatedAt { get; set; }
 }

@@ -2,8 +2,13 @@ namespace Salamtak.Shared.DTOs.Appointments;
 
 public class BookAppointmentDto
 {
-    public int PatientId { get; set; }
-    public int DoctorId { get; set; }
-    public int AvailabilitySlotId { get; set; }
-    public string Reason { get; set; } = string.Empty;
+    public Guid DoctorId { get; set; }
+
+    public Guid ClinicId { get; set; }
+
+    public Guid AvailabilitySlotId { get; set; }
+
+    public string BookingMethod { get; set; } = "Direct";
+
+    public string? Reason { get; set; }
 }

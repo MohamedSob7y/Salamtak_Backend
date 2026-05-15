@@ -22,7 +22,9 @@ namespace Salamtak.Persistance.Configurations
 
             builder.Property(a => a.DoctorId)
                    .IsRequired();
-
+            builder.Property(a => a.Reason)
+                   .HasMaxLength(500)
+                   .IsRequired(false); 
             builder.Property(a => a.ClinicId)
                    .IsRequired();
 

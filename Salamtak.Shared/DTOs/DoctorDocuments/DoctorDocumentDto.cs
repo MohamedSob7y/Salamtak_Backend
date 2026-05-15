@@ -2,13 +2,23 @@ namespace Salamtak.Shared.DTOs.DoctorDocuments;
 
 public class DoctorDocumentDto
 {
-    public int Id { get; set; }
-    public int DoctorId { get; set; }
-    public string DocumentName { get; set; } = string.Empty;
-    public string DocumentUrl { get; set; } = string.Empty;
-    public string DocumentType { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
-    public DateTime UploadedAt { get; set; }
+    public Guid DocumentId { get; set; }
+
+    public Guid DoctorId { get; set; }
+
+    public string DoctorName { get; set; } = null!;
+
+    public string DocumentType { get; set; } = null!;
+
+    public string FileUrl { get; set; } = null!;
+
+    public bool IsVerified { get; set; }
+
+    public string? RejectionReason { get; set; }
+
+    public Guid? VerifiedByAdminId { get; set; }
+
     public DateTime? VerifiedAt { get; set; }
-    public string RejectionReason { get; set; } = string.Empty;
+
+    public DateTime UploadedAt { get; set; }
 }

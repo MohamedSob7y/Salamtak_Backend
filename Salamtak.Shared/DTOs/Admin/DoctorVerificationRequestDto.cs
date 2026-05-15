@@ -2,10 +2,17 @@ namespace Salamtak.Shared.DTOs.Admin;
 
 public class DoctorVerificationRequestDto
 {
-    public int DoctorId { get; set; }
-    public string DoctorName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string SpecialtyName { get; set; } = string.Empty;
-    public string LicenseNumber { get; set; } = string.Empty;
-    public DateTime RequestedAt { get; set; }
+    public Guid DoctorId { get; set; }
+
+    public string DoctorName { get; set; } = null!;
+
+    public string Email { get; set; } = null!;
+
+    public string PhoneNumber { get; set; } = null!;
+
+    public string SpecialtyName { get; set; } = null!;
+
+    public string VerificationStatus { get; set; } = null!;
+
+    public int DocumentsCount { get; set; }
 }

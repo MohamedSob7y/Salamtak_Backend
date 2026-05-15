@@ -2,7 +2,11 @@ namespace Salamtak.Shared.DTOs.Patients;
 
 public class PatientSummaryDto
 {
-    public int PatientId { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
+    public Guid PatientId { get; set; }
+
+    public string FullName { get; set; } = null!;
+
+    public string PhoneNumber { get; set; } = null!;
+
+    public string Gender { get; set; } = null!;
 }

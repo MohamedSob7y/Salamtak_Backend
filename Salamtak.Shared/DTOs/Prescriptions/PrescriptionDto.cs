@@ -2,14 +2,15 @@ namespace Salamtak.Shared.DTOs.Prescriptions;
 
 public class PrescriptionDto
 {
-    public int Id { get; set; }
-    public int AppointmentId { get; set; }
-    public int PatientId { get; set; }
-    public string PatientName { get; set; } = string.Empty;
-    public int DoctorId { get; set; }
-    public string DoctorName { get; set; } = string.Empty;
-    public string MedicationName { get; set; } = string.Empty;
-    public string Dosage { get; set; } = string.Empty;
-    public string Instructions { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
+    public Guid PrescriptionId { get; set; }
+
+    public Guid MedicalReportEntryId { get; set; }
+
+    public string DrugName { get; set; } = null!;
+
+    public string? Dose { get; set; }
+
+    public string? Duration { get; set; }
+
+    public string? Instructions { get; set; }
 }

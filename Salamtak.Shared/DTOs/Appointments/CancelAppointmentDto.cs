@@ -2,6 +2,7 @@ namespace Salamtak.Shared.DTOs.Appointments;
 
 public class CancelAppointmentDto
 {
-    public int AppointmentId { get; set; }
-    public string CancellationReason { get; set; } = string.Empty;
+    public Guid AppointmentId { get; set; }
+
+    public string? CancelReason { get; set; }
 }

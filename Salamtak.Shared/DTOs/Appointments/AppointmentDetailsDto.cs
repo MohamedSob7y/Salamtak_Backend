@@ -2,7 +2,7 @@ namespace Salamtak.Shared.DTOs.Appointments;
 
 public class AppointmentDetailsDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string PatientName { get; set; } = string.Empty;
     public string DoctorName { get; set; } = string.Empty;
     public string SpecialtyName { get; set; } = string.Empty;

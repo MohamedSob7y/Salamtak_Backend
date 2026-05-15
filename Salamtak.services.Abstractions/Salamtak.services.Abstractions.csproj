@@ -10,8 +10,4 @@
     <ProjectReference Include="..\Salamtak.Shared\Salamtak.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interfaces Services\" />
-  </ItemGroup>
-
 </Project>

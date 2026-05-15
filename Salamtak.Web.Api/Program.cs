@@ -1,4 +1,4 @@
-
+using Salamtak.services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Salamtak.Domain.Interfaces.Repository;
@@ -7,7 +7,7 @@ using Salamtak.Persistance.Context;
 using Salamtak.Persistance.Implementation.Repository;
 using Salamtak.Persistance.Implementation.Unite_Of_Work;
 using Salamtak.services.Mapping;
-
+using Salamtak.Web.Api.Middlewares;
 namespace Salamtak.Web.Api
 {
     public class Program
@@ -34,6 +34,7 @@ namespace Salamtak.Web.Api
             });
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddAutoMapper(T => T.AddProfile(typeof(MappingProfile)));
+            builder.Services.AddApplicationServices();
             #endregion
             //============================================
             #region Build Application on server
@@ -47,7 +48,7 @@ namespace Salamtak.Web.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseMiddleware<ExceptionMiddleware>();
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
