@@ -21,7 +21,7 @@ namespace Salamtak.Domain.Models
         public string? LicenseNumber { get; set; }
 
         public DoctorVerificationStatus VerificationStatus { get; set; } = DoctorVerificationStatus.Pending;
-
+        public decimal? ConsultationFee { get; set; }
         public bool IsVerified { get; set; } = false;
 
         public double AverageRating { get; set; } = 0;

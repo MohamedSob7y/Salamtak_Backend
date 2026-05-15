@@ -23,6 +23,11 @@ namespace Salamtak.Persistance.Configurations
             builder.HasIndex(p => p.UserId)
                    .IsUnique();
 
+
+            builder.Property(p => p.BloodType)
+                   .HasMaxLength(5)
+                   .IsRequired(false);
+
             builder.Property(p => p.Gender)
                    .IsRequired();
 
