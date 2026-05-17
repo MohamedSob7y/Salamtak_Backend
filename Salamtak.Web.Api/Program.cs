@@ -28,13 +28,14 @@ namespace Salamtak.Web.Api
             #endregion
             //============================================
             #region Inject Dependency
+            //Dependency For DbContext+ UnitOfWork + Mapping Profile + Injection For all Methods in Dependency injection File
             builder.Services.AddDbContext<SalamtakDBContext>(options =>
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("Default"));
             });
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddAutoMapper(T => T.AddProfile(typeof(MappingProfile)));
-            builder.Services.AddApplicationServices();
+            builder.Services.AddApplicationServices();//call Dependency injection File For All Services 
             #endregion
             //============================================
             #region Build Application on server

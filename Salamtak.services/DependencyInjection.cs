@@ -15,22 +15,23 @@ namespace Salamtak.services
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-           
+
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-            //services.AddScoped<IAuthService, AuthService>();
-            // services.AddScoped<IUserService, UserService>();
-            // services.AddScoped<IPatientService, PatientService>();
-            // services.AddScoped<IDoctorService, DoctorService>();
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IPatientService, PatientService>();
+            services.AddScoped<IDoctorService, DoctorService>();
             services.AddScoped<ISpecialtyService, SpecialtyService>();
-             services.AddScoped<IClinicService, ClinicService>();
-             services.AddScoped<IAvailabilitySlotService, AvailabilitySlotService>();
-             services.AddScoped<IAppointmentService, AppointmentService>();
-            // services.AddScoped<IMedicalReportService, MedicalReportService>();
-            // services.AddScoped<IDoctorDocumentService, DoctorDocumentService>();
-            // services.AddScoped<IFeedbackService, FeedbackService>();
-            // services.AddScoped<INotificationService, NotificationService>();
-            // services.AddScoped<IAdminService, AdminService>();
-            // services.AddScoped<IAIService, AIService>();
+            services.AddScoped<IClinicService, ClinicService>();
+            services.AddScoped<IAvailabilitySlotService, AvailabilitySlotService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IMedicalReportService, MedicalReportService>();
+            services.AddScoped<IDoctorDocumentService, DoctorDocumentService>();
+            services.AddScoped<IFeedbackService, FeedbackService>();
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IRealtimeNotificationService, RealtimeNotificationService>();
+            services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAIService, AIService>();
 
             return services;
         }
