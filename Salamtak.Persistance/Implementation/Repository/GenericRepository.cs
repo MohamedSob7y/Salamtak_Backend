@@ -95,5 +95,36 @@ namespace Salamtak.Persistance.Implementation.Repository
                 .Where(e => !e.IsDeleted)
                 .AnyAsync(condition);
         }
+
+
+
+
+        public async Task<TEntity?> FirstOrDefaultWithIncludesAsync(
+    Expression<Func<TEntity, bool>> predicate,
+    params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.FirstOrDefaultAsync(predicate);
+        }
+
+        public async Task<IReadOnlyList<TEntity>> GetAllWithIncludesAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = _dbSet;
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.Where(predicate).ToListAsync();
+        }
     }
 }

@@ -21,19 +21,24 @@ namespace Salamtak.services.Implementation_Of_Services
         private readonly IValidator<BookAppointmentDto> _bookValidator;
         private readonly IValidator<CancelAppointmentDto> _cancelValidator;
         private readonly IValidator<CompleteAppointmentDto> _completeValidator;
-
+        private readonly INotificationService _notificationService;
+        private readonly IRealtimeNotificationService _realtimeNotificationService;
         public AppointmentService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<BookAppointmentDto> bookValidator,
             IValidator<CancelAppointmentDto> cancelValidator,
-            IValidator<CompleteAppointmentDto> completeValidator)
+            IValidator<CompleteAppointmentDto> completeValidator,
+            INotificationService notificationService,
+            IRealtimeNotificationService realtimeNotificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _bookValidator = bookValidator;
             _cancelValidator = cancelValidator;
             _completeValidator = completeValidator;
+            _notificationService= notificationService;
+            _realtimeNotificationService = realtimeNotificationService;
         }
 
         public async Task<ApiResponse<AppointmentDto>> BookAppointmentAsync(Guid patientId, BookAppointmentDto dto)
@@ -88,9 +93,9 @@ namespace Salamtak.services.Implementation_Of_Services
             if (alreadyBooked)
                 throw new ConflictException("This slot already has an appointment.");
 
-            var bookingMethod = dto.BookingMethod == "AI"
-                ? BookingMethod.AI
-                : BookingMethod.Direct;
+            var bookingMethod = dto.BookingMethod.Equals("AI", StringComparison.OrdinalIgnoreCase)
+                 ? BookingMethod.AI
+                 : BookingMethod.Direct;
 
             var appointment = new Appointment
             {

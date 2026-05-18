@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Salamtak.Domain\Salamtak.Domain.csproj" />
     <ProjectReference Include="..\Salamtak.Shared\Salamtak.Shared.csproj" />
   </ItemGroup>
 

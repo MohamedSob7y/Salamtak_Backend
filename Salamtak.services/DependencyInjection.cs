@@ -15,7 +15,7 @@ namespace Salamtak.services
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUserService, UserService>();
@@ -32,7 +32,7 @@ namespace Salamtak.services
             services.AddScoped<IRealtimeNotificationService, RealtimeNotificationService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IAIService, AIService>();
-
+            services.AddScoped<IJwtService, JwtService>();
             return services;
         }
     }

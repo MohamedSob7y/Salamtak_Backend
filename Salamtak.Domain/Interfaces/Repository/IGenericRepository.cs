@@ -29,5 +29,12 @@ namespace Salamtak.Domain.Interfaces.Repository
         Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> condition);
 
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> condition);
+        Task<TEntity?> FirstOrDefaultWithIncludesAsync(
+              Expression<Func<TEntity, bool>> predicate,
+              params Expression<Func<TEntity, object>>[] includes);
+
+        Task<IReadOnlyList<TEntity>> GetAllWithIncludesAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            params Expression<Func<TEntity, object>>[] includes);
     }
 }

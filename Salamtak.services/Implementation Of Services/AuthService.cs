@@ -14,17 +14,20 @@ namespace Salamtak.services.Implementation_Of_Services
     public class AuthService : IAuthService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IJwtService _jwtService;
         private readonly IValidator<LoginRequestDto> _loginValidator;
         private readonly IValidator<RegisterPatientRequestDto> _patientValidator;
         private readonly IValidator<RegisterDoctorRequestDto> _doctorValidator;
 
         public AuthService(
             IUnitOfWork unitOfWork,
+            IJwtService jwtService,
             IValidator<LoginRequestDto> loginValidator,
             IValidator<RegisterPatientRequestDto> patientValidator,
             IValidator<RegisterDoctorRequestDto> doctorValidator)
         {
             _unitOfWork = unitOfWork;
+            _jwtService = jwtService;
             _loginValidator = loginValidator;
             _patientValidator = patientValidator;
             _doctorValidator = doctorValidator;
@@ -33,13 +36,21 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto dto)
         {
             var validationResult = await _loginValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var user = await _unitOfWork.Repository<User>().FirstOrDefaultAsync(u => u.Email == dto.Email.Trim());
+            var email = dto.Email.Trim();
+
+            var user = await _unitOfWork
+                .Repository<User>()
+                .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user is null || !VerifyPassword(dto.Password, user.PasswordHash))
                 throw new BadRequestException("Invalid email or password.");
+
+            if (user.Status != UserStatus.Active)
+                throw new ForbiddenException("User account is not active.");
 
             return ApiResponse<LoginResponseDto>.Ok(ToLoginResponse(user), "Login successful.");
         }
@@ -47,34 +58,47 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<LoginResponseDto>> RegisterPatientAsync(RegisterPatientRequestDto dto)
         {
             var validationResult = await _patientValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var emailExists = await _unitOfWork.Repository<User>().AnyAsync(u => u.Email == dto.Email.Trim());
+            var email = dto.Email.Trim();
+
+            var emailExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.Email == email);
+
             if (emailExists)
                 throw new ConflictException("Email already exists.");
+
+            if (!Enum.TryParse<Gender>(dto.Gender, true, out var gender))
+                throw new BadRequestException("Invalid gender.");
 
             var user = new User
             {
                 FullName = dto.FullName.Trim(),
-                Email = dto.Email.Trim(),
+                Email = email,
                 PhoneNumber = dto.PhoneNumber.Trim(),
                 PasswordHash = HashPassword(dto.Password),
-                Role = UserRole.Patient
+                Role = UserRole.Patient,
+                Status = UserStatus.Active
             };
 
             var patient = new Patient
             {
                 User = user,
                 DateOfBirth = dto.DateOfBirth,
-                Gender = Enum.Parse<Gender>(dto.Gender, true),
+                Gender = gender,
                 Address = dto.Address?.Trim(),
                 BloodType = dto.BloodType?.Trim(),
                 Height = dto.Height,
                 Weight = dto.Weight
             };
 
-            var medicalReport = new MedicalReport { Patient = patient };
+            var medicalReport = new MedicalReport
+            {
+                Patient = patient
+            };
 
             await _unitOfWork.Repository<User>().AddAsync(user);
             await _unitOfWork.Repository<Patient>().AddAsync(patient);
@@ -88,24 +112,34 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<LoginResponseDto>> RegisterDoctorAsync(RegisterDoctorRequestDto dto)
         {
             var validationResult = await _doctorValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var emailExists = await _unitOfWork.Repository<User>().AnyAsync(u => u.Email == dto.Email.Trim());
+            var email = dto.Email.Trim();
+
+            var emailExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.Email == email);
+
             if (emailExists)
                 throw new ConflictException("Email already exists.");
 
-            var specialty = await _unitOfWork.Repository<Specialty>().GetByIdAsync(dto.SpecialtyId);
+            var specialty = await _unitOfWork
+                .Repository<Specialty>()
+                .GetByIdAsync(dto.SpecialtyId);
+
             if (specialty is null)
                 throw new NotFoundException("Specialty not found.");
 
             var user = new User
             {
                 FullName = dto.FullName.Trim(),
-                Email = dto.Email.Trim(),
+                Email = email,
                 PhoneNumber = dto.PhoneNumber.Trim(),
                 PasswordHash = HashPassword(dto.Password),
-                Role = UserRole.Doctor
+                Role = UserRole.Doctor,
+                Status = UserStatus.Active
             };
 
             var doctor = new Doctor
@@ -130,7 +164,10 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse<CurrentUserDto>> GetCurrentUserAsync(Guid userId)
         {
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
+            var user = await _unitOfWork
+                .Repository<User>()
+                .GetByIdAsync(userId);
+
             if (user is null)
                 throw new NotFoundException("User not found.");
 
@@ -145,7 +182,7 @@ namespace Salamtak.services.Implementation_Of_Services
             return ApiResponse<CurrentUserDto>.Ok(result);
         }
 
-        private static LoginResponseDto ToLoginResponse(User user)
+        private LoginResponseDto ToLoginResponse(User user)
         {
             return new LoginResponseDto
             {
@@ -153,7 +190,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 FullName = user.FullName,
                 Email = user.Email,
                 Role = user.Role.ToString(),
-                Token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                Token = _jwtService.GenerateToken(user),
                 Expiration = DateTime.UtcNow.AddDays(1)
             };
         }
@@ -161,14 +198,19 @@ namespace Salamtak.services.Implementation_Of_Services
         private static string HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
-            return Convert.ToHexString(sha256.ComputeHash(Encoding.UTF8.GetBytes(password)));
+
+            var bytes = Encoding.UTF8.GetBytes(password);
+
+            var hashBytes = sha256.ComputeHash(bytes);
+
+            return Convert.ToHexString(hashBytes);
         }
 
         private static bool VerifyPassword(string password, string storedHash)
         {
             var hash = HashPassword(password);
-            return string.Equals(hash, storedHash, StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(password, storedHash, StringComparison.Ordinal);
+
+            return string.Equals(hash, storedHash, StringComparison.OrdinalIgnoreCase);
         }
     }
 }
