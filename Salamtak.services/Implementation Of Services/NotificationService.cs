@@ -32,12 +32,22 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<NotificationDto>> CreateAsync(CreateNotificationDto dto)
         {
             var validationResult = await _createValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var userExists = await _unitOfWork.Repository<User>().AnyAsync(u => u.Id == dto.UserId);
+            var userExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.Id == dto.UserId);
+
             if (!userExists)
                 throw new NotFoundException("User not found.");
+
+            if (!Enum.TryParse<NotificationType>(dto.Type, true, out var type))
+                throw new BadRequestException("Invalid notification type.");
+
+            if (!Enum.TryParse<NotificationChannel>(dto.Channel, true, out var channel))
+                throw new BadRequestException("Invalid notification channel.");
 
             var notification = new Notification
             {
@@ -45,27 +55,46 @@ namespace Salamtak.services.Implementation_Of_Services
                 AppointmentId = dto.AppointmentId,
                 Title = dto.Title.Trim(),
                 Message = dto.Message.Trim(),
-                Type = Enum.Parse<NotificationType>(dto.Type, true),
-                Channel = Enum.Parse<NotificationChannel>(dto.Channel, true),
-                Status = NotificationStatus.Pending,
+                Type = type,
+                Channel = channel,
+                Status = channel == NotificationChannel.InApp
+                    ? NotificationStatus.Sent
+                    : NotificationStatus.Pending,
+                SentAt = channel == NotificationChannel.InApp
+                    ? DateTime.UtcNow
+                    : null,
                 IsRead = false
             };
 
-            await _unitOfWork.Repository<Notification>().AddAsync(notification);
+            await _unitOfWork
+                .Repository<Notification>()
+                .AddAsync(notification);
+
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<NotificationDto>(notification);
+
             return ApiResponse<NotificationDto>.Ok(result, "Notification created successfully.");
         }
 
         public async Task<ApiResponse<IReadOnlyList<NotificationDto>>> GetUserNotificationsAsync(Guid userId)
         {
-            var userExists = await _unitOfWork.Repository<User>().AnyAsync(u => u.Id == userId);
+            var userExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.Id == userId);
+
             if (!userExists)
                 throw new NotFoundException("User not found.");
 
-            var notifications = await _unitOfWork.Repository<Notification>().GetAllAsync(n => n.UserId == userId);
-            var result = _mapper.Map<IReadOnlyList<NotificationDto>>(notifications);
+            var notifications = await _unitOfWork
+                .Repository<Notification>()
+                .GetAllAsync(n => n.UserId == userId);
+
+            var orderedNotifications = notifications
+                .OrderByDescending(n => n.CreatedAt)
+                .ToList();
+
+            var result = _mapper.Map<IReadOnlyList<NotificationDto>>(orderedNotifications);
 
             return ApiResponse<IReadOnlyList<NotificationDto>>.Ok(result);
         }
@@ -73,10 +102,14 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse> MarkAsReadAsync(Guid userId, MarkNotificationAsReadDto dto)
         {
             var validationResult = await _markValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var notification = await _unitOfWork.Repository<Notification>().GetByIdAsync(dto.NotificationId);
+            var notification = await _unitOfWork
+                .Repository<Notification>()
+                .GetByIdAsync(dto.NotificationId);
+
             if (notification is null)
                 throw new NotFoundException("Notification not found.");
 
@@ -86,6 +119,7 @@ namespace Salamtak.services.Implementation_Of_Services
             notification.IsRead = true;
 
             _unitOfWork.Repository<Notification>().Update(notification);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("Notification marked as read.");
@@ -93,7 +127,15 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse> MarkAllAsReadAsync(Guid userId)
         {
-            var notifications = await _unitOfWork.Repository<Notification>()
+            var userExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.Id == userId);
+
+            if (!userExists)
+                throw new NotFoundException("User not found.");
+
+            var notifications = await _unitOfWork
+                .Repository<Notification>()
                 .GetAllAsync(n => n.UserId == userId && !n.IsRead);
 
             foreach (var notification in notifications)

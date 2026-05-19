@@ -8,12 +8,20 @@ namespace Salamtak.Domain.Models.Enums
 {
     public enum NotificationType
     {
+        General = 0,
+
         AppointmentBooked = 1,
+
         AppointmentCancelled = 2,
-        AppointmentReminder = 3,
+
+        AppointmentCompleted = 3,
+
         DoctorVerified = 4,
+
         DoctorRejected = 5,
+
         MedicalReportUpdated = 6,
-        NewFeedback = 7
+
+        PrescriptionAdded = 7
     }
 }

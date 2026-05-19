@@ -6,6 +6,7 @@ using Salamtak.Domain.Models.Enums;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Exceptions;
 using Salamtak.Shared.DTOs.Appointments;
+using Salamtak.Shared.DTOs.Notifications;
 using Salamtak.Shared.Responses;
 using System;
 using System.Collections.Generic;
@@ -118,6 +119,54 @@ namespace Salamtak.services.Implementation_Of_Services
 
             appointment.AvailabilitySlot = slot;
 
+            // Save notification for patient in database
+            var patientNotification = await _notificationService.CreateAsync(new CreateNotificationDto
+            {
+                UserId = patient.UserId,
+                AppointmentId = appointment.Id,
+                Title = "Appointment Booked",
+                Message = "Your appointment has been booked successfully.",
+                Type = "AppointmentBooked",
+                Channel = "InApp"
+            });
+
+            // Save notification for doctor in database
+            var doctorNotification = await _notificationService.CreateAsync(new CreateNotificationDto
+            {
+                UserId = doctor.UserId,
+                AppointmentId = appointment.Id,
+                Title = "New Appointment",
+                Message = "You have a new appointment booking.",
+                Type = "AppointmentBooked",
+                Channel = "InApp"
+            });
+
+            // Send realtime notification to patient
+            if (patientNotification.Data is not null)
+            {
+                await _realtimeNotificationService.SendToPatientAsync(patient.UserId, new RealtimeNotificationDto
+                {
+                    NotificationId = patientNotification.Data.NotificationId,
+                    Title = patientNotification.Data.Title,
+                    Message = patientNotification.Data.Message,
+                    Type = patientNotification.Data.Type,
+                    CreatedAt = patientNotification.Data.CreatedAt
+                });
+            }
+
+            // Send realtime notification to doctor
+            if (doctorNotification.Data is not null)
+            {
+                await _realtimeNotificationService.SendToDoctorAsync(doctor.UserId, new RealtimeNotificationDto
+                {
+                    NotificationId = doctorNotification.Data.NotificationId,
+                    Title = doctorNotification.Data.Title,
+                    Message = doctorNotification.Data.Message,
+                    Type = doctorNotification.Data.Type,
+                    CreatedAt = doctorNotification.Data.CreatedAt
+                });
+            }
+
             var result = _mapper.Map<AppointmentDto>(appointment);
 
             return ApiResponse<AppointmentDto>.Ok(result, "Appointment booked successfully.");
@@ -170,6 +219,66 @@ namespace Salamtak.services.Implementation_Of_Services
             _unitOfWork.Repository<AvailabilitySlot>().Update(slot);
 
             await _unitOfWork.SaveChangesAsync();
+
+            var appointmentPatient = await _unitOfWork.Repository<Patient>()
+                .GetByIdAsync(appointment.PatientId);
+
+            var appointmentDoctor = await _unitOfWork.Repository<Doctor>()
+                .GetByIdAsync(appointment.DoctorId);
+
+            if (appointmentPatient is not null)
+            {
+                var patientNotification = await _notificationService.CreateAsync(new CreateNotificationDto
+                {
+                    UserId = appointmentPatient.UserId,
+                    AppointmentId = appointment.Id,
+                    Title = "Appointment Cancelled",
+                    Message = "Your appointment has been cancelled.",
+                    Type = "AppointmentCancelled",
+                    Channel = "InApp"
+                });
+
+                if (patientNotification.Data is not null)
+                {
+                    await _realtimeNotificationService.SendToPatientAsync(
+                        appointmentPatient.UserId,
+                        new RealtimeNotificationDto
+                        {
+                            NotificationId = patientNotification.Data.NotificationId,
+                            Title = patientNotification.Data.Title,
+                            Message = patientNotification.Data.Message,
+                            Type = patientNotification.Data.Type,
+                            CreatedAt = patientNotification.Data.CreatedAt
+                        });
+                }
+            }
+
+            if (appointmentDoctor is not null)
+            {
+                var doctorNotification = await _notificationService.CreateAsync(new CreateNotificationDto
+                {
+                    UserId = appointmentDoctor.UserId,
+                    AppointmentId = appointment.Id,
+                    Title = "Appointment Cancelled",
+                    Message = "An appointment has been cancelled.",
+                    Type = "AppointmentCancelled",
+                    Channel = "InApp"
+                });
+
+                if (doctorNotification.Data is not null)
+                {
+                    await _realtimeNotificationService.SendToDoctorAsync(
+                        appointmentDoctor.UserId,
+                        new RealtimeNotificationDto
+                        {
+                            NotificationId = doctorNotification.Data.NotificationId,
+                            Title = doctorNotification.Data.Title,
+                            Message = doctorNotification.Data.Message,
+                            Type = doctorNotification.Data.Type,
+                            CreatedAt = doctorNotification.Data.CreatedAt
+                        });
+                }
+            }
 
             return ApiResponse.Ok("Appointment cancelled successfully.");
         }

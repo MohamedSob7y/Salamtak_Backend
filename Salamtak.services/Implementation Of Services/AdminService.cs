@@ -72,11 +72,6 @@ namespace Salamtak.services.Implementation_Of_Services
             if (!documents.Any())
                 throw new BadRequestException("Doctor has no uploaded documents.");
 
-            var hasLicenseDocument = documents.Any(d => d.DocumentType == DoctorDocumentType.License);
-
-            if (!hasLicenseDocument)
-                throw new BadRequestException("Doctor license document is required.");
-
             doctor.IsVerified = true;
             doctor.VerificationStatus = DoctorVerificationStatus.Verified;
 

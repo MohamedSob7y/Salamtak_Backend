@@ -8,8 +8,11 @@ using Salamtak.Persistance.Context;
 using Salamtak.Persistance.Implementation.Repository;
 using Salamtak.Persistance.Implementation.Unite_Of_Work;
 using Salamtak.services;
+using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Mapping;
+using Salamtak.Web.Api.Hubs_Real_Time;
 using Salamtak.Web.Api.Middlewares;
+using Salamtak.Web.Api.Realtime;
 using System.Text;
 namespace Salamtak.Web.Api
 {
@@ -38,6 +41,8 @@ namespace Salamtak.Web.Api
             });
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddApplicationServices();//call Dependency injection File For All Services 
+            builder.Services.AddScoped<IRealtimeNotificationService, SignalRRealtimeNotificationService>();
+            builder.Services.AddSignalR();
             #endregion
             //============================================
             #region Authorization
@@ -46,29 +51,61 @@ namespace Salamtak.Web.Api
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-                    .AddJwtBearer(options =>
-{
-    var jwtKey = builder.Configuration["Jwt:Key"];
+             .AddJwtBearer(options =>
+             {
+             var jwtKey = builder.Configuration["Jwt:Key"];
 
-    if (string.IsNullOrWhiteSpace(jwtKey))
-        throw new InvalidOperationException("JWT key is not configured.");
+             if (string.IsNullOrWhiteSpace(jwtKey))
+              throw new InvalidOperationException("JWT key is not configured.");
 
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
+             options.TokenValidationParameters = new TokenValidationParameters
+             {
+              ValidateIssuer = true,
+               ValidateAudience = true,
+      ValidateLifetime = true,
+      ValidateIssuerSigningKey = true,
 
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+      ValidIssuer = builder.Configuration["Jwt:Issuer"],
+      ValidAudience = builder.Configuration["Jwt:Audience"],
 
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtKey)),
+      IssuerSigningKey = new SymmetricSecurityKey(
+          Encoding.UTF8.GetBytes(jwtKey)),
 
-        ClockSkew = TimeSpan.Zero
-    };
+      ClockSkew = TimeSpan.Zero
+  };
+
+  options.Events = new JwtBearerEvents
+  {
+      OnMessageReceived = context =>
+      {
+          var accessToken = context.Request.Query["access_token"];
+
+          var path = context.HttpContext.Request.Path;
+
+          if (!string.IsNullOrEmpty(accessToken) &&
+              path.StartsWithSegments("/hubs/notifications"))
+          {
+              context.Token = accessToken;
+          }
+
+          return Task.CompletedTask;
+      }
+  };
 });
+            #endregion
+            //============================================
+            #region Connection SignalR With Frontend
+            builder.Services.AddCors(options =>
+               {
+                   options.AddPolicy("AllowFrontend", policy =>
+                   {
+                       policy
+                           .WithOrigins("http://localhost:4200")
+                           .AllowAnyHeader()
+                           .AllowAnyMethod()
+                           .AllowCredentials();
+                   });
+               });
             #endregion
             //============================================
             #region Build Application on server
@@ -84,11 +121,13 @@ namespace Salamtak.Web.Api
             }
             app.UseMiddleware<ExceptionMiddleware>();
             app.UseHttpsRedirection();
+            app.UseCors("AllowFrontend");
             app.UseAuthentication();
 
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<NotificationHub>("/hubs/notifications");
             #endregion
             //============================================
             #region Run Application

@@ -41,24 +41,31 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<PatientProfileDto>> UpdateProfileAsync(Guid patientId, UpdatePatientProfileDto dto)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
             var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(patientId);
+
             if (patient is null)
                 throw new NotFoundException("Patient not found.");
 
+            if (!Enum.TryParse<Gender>(dto.Gender, true, out var gender))
+                throw new BadRequestException("Invalid gender.");
+
             patient.DateOfBirth = dto.DateOfBirth;
-            patient.Gender = Enum.Parse<Gender>(dto.Gender, true);
+            patient.Gender = gender;
             patient.Address = dto.Address?.Trim();
             patient.BloodType = dto.BloodType?.Trim();
             patient.Height = dto.Height;
             patient.Weight = dto.Weight;
 
             _unitOfWork.Repository<Patient>().Update(patient);
+
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<PatientProfileDto>(patient);
+
             return ApiResponse<PatientProfileDto>.Ok(result, "Patient profile updated successfully.");
         }
 
@@ -76,15 +83,37 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse<MedicalReportDto>> GetMedicalHistoryAsync(Guid patientId)
         {
-            var patientExists = await _unitOfWork.Repository<Patient>().AnyAsync(p => p.Id == patientId);
+            var patientExists = await _unitOfWork
+                .Repository<Patient>()
+                .AnyAsync(p => p.Id == patientId);
+
             if (!patientExists)
                 throw new NotFoundException("Patient not found.");
 
-            var report = await _unitOfWork.Repository<MedicalReport>().FirstOrDefaultAsync(r => r.PatientId == patientId);
+            var report = await _unitOfWork
+                .Repository<MedicalReport>()
+                .FirstOrDefaultAsync(r => r.PatientId == patientId);
+
             if (report is null)
                 throw new NotFoundException("Medical history not found.");
 
+            var entries = await _unitOfWork
+                .Repository<MedicalReportEntry>()
+                .GetAllAsync(e => e.MedicalReportId == report.Id);
+
+            foreach (var entry in entries)
+            {
+                var prescriptions = await _unitOfWork
+                    .Repository<Prescription>()
+                    .GetAllAsync(p => p.MedicalReportEntryId == entry.Id);
+
+                entry.Prescriptions = prescriptions.ToList();
+            }
+
+            report.Entries = entries.ToList();
+
             var result = _mapper.Map<MedicalReportDto>(report);
+
             return ApiResponse<MedicalReportDto>.Ok(result);
         }
     }

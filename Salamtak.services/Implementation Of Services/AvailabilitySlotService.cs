@@ -2,6 +2,7 @@
 using FluentValidation;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
+using Salamtak.Domain.Models.Enums;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Exceptions;
 using Salamtak.Shared.DTOs.AvailabilitySlots;
@@ -133,11 +134,13 @@ namespace Salamtak.services.Implementation_Of_Services
                 throw new NotFoundException("Availability slot not found.");
 
             var hasAppointment = await _unitOfWork
-                .Repository<Appointment>()
-                .AnyAsync(a => a.AvailabilitySlotId == dto.SlotId);
+                 .Repository<Appointment>()
+                 .AnyAsync(a =>
+                  a.AvailabilitySlotId == dto.SlotId &&
+                  a.Status != AppointmentStatus.Cancelled);
 
             if (hasAppointment)
-                throw new ConflictException("Cannot update a slot that already has an appointment.");
+                throw new ConflictException("Cannot update a slot that already has an Active appointment.");
 
             var overlap = await _unitOfWork
                 .Repository<AvailabilitySlot>()
@@ -171,11 +174,13 @@ namespace Salamtak.services.Implementation_Of_Services
                 throw new NotFoundException("Availability slot not found.");
 
             var hasAppointment = await _unitOfWork
-                .Repository<Appointment>()
-                .AnyAsync(a => a.AvailabilitySlotId == slotId);
+              .Repository<Appointment>()
+              .AnyAsync(a =>
+        a.AvailabilitySlotId == slotId &&
+        a.Status != AppointmentStatus.Cancelled);
 
             if (hasAppointment)
-                throw new ConflictException("Cannot delete a slot that already has an appointment.");
+                throw new ConflictException("Cannot delete a slot that already has an Active appointment.");
 
             _unitOfWork.Repository<AvailabilitySlot>().SoftDelete(slot);
             await _unitOfWork.SaveChangesAsync();
@@ -185,14 +190,26 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse> MarkAsAvailableAsync(Guid slotId)
         {
-            var slot = await _unitOfWork.Repository<AvailabilitySlot>().GetByIdAsync(slotId);
+            var slot = await _unitOfWork
+                .Repository<AvailabilitySlot>()
+                .GetByIdAsync(slotId);
 
             if (slot is null)
                 throw new NotFoundException("Availability slot not found.");
 
+            var hasConfirmedAppointment = await _unitOfWork
+                .Repository<Appointment>()
+                .AnyAsync(a =>
+                    a.AvailabilitySlotId == slotId &&
+                    a.Status == AppointmentStatus.Confirmed);
+
+            if (hasConfirmedAppointment)
+                throw new ConflictException("Cannot mark a booked slot as available.");
+
             slot.IsAvailable = true;
 
             _unitOfWork.Repository<AvailabilitySlot>().Update(slot);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("Slot marked as available.");
