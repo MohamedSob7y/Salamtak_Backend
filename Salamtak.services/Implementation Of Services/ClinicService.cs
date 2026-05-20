@@ -2,6 +2,7 @@
 using FluentValidation;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
+using Salamtak.Domain.Models.Enums;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Exceptions;
 using Salamtak.Shared.DTOs.Clinics;
@@ -148,19 +149,33 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse> DeleteAsync(Guid clinicId)
         {
-            var clinic = await _unitOfWork.Repository<Clinic>().GetByIdAsync(clinicId);
+            var clinic = await _unitOfWork
+                .Repository<Clinic>()
+                .GetByIdAsync(clinicId);
 
             if (clinic is null)
                 throw new NotFoundException("Clinic not found.");
 
-            var hasAppointments = await _unitOfWork
+            var hasActiveAppointments = await _unitOfWork
                 .Repository<Appointment>()
-                .AnyAsync(a => a.ClinicId == clinicId);
+                .AnyAsync(a =>
+                    a.ClinicId == clinicId &&
+                    a.Status != AppointmentStatus.Cancelled);
 
-            if (hasAppointments)
-                throw new ConflictException("Cannot delete clinic because it has appointments.");
+            if (hasActiveAppointments)
+                throw new ConflictException("Cannot delete clinic because it has active appointments.");
+
+            var hasFutureSlots = await _unitOfWork
+                .Repository<AvailabilitySlot>()
+                .AnyAsync(s =>
+                    s.ClinicId == clinicId &&
+                    s.StartTime > DateTime.UtcNow);
+
+            if (hasFutureSlots)
+                throw new ConflictException("Cannot delete clinic because it has future availability slots.");
 
             _unitOfWork.Repository<Clinic>().SoftDelete(clinic);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("Clinic deleted successfully.");

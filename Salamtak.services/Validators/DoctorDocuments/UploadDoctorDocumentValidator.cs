@@ -12,9 +12,6 @@ namespace Salamtak.services.Validators.DoctorDocuments
     {
         public UploadDoctorDocumentValidator()
         {
-            RuleFor(x => x.DoctorId)
-                .NotEmpty();
-
             RuleFor(x => x.DocumentType)
                 .NotEmpty()
                 .Must(x =>

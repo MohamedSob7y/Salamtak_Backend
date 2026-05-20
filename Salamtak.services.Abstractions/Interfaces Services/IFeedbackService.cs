@@ -16,6 +16,6 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 
         Task<ApiResponse<IReadOnlyList<DoctorFeedbackDto>>> GetDoctorFeedbacksAsync(Guid doctorId);
 
-        Task<ApiResponse> DeleteAsync(Guid feedbackId);
+        Task<ApiResponse> DeleteAsync(Guid patientId, Guid feedbackId);
     }
 }

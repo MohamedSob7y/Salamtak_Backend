@@ -10,7 +10,7 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 {
     public interface IDoctorDocumentService
     {
-        Task<ApiResponse<DoctorDocumentDto>> UploadAsync(UploadDoctorDocumentDto dto);
+        Task<ApiResponse<DoctorDocumentDto>> UploadAsync(Guid doctorId, UploadDoctorDocumentDto dto);
 
         Task<ApiResponse<IReadOnlyList<DoctorDocumentDto>>> GetDoctorDocumentsAsync(Guid doctorId);
 

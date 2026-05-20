@@ -35,16 +35,24 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse<IReadOnlyList<SpecialtyDto>>> GetAllAsync()
         {
-            var specialties = await _unitOfWork.Repository<Specialty>().GetAllAsync();
+            var specialties = await _unitOfWork
+                .Repository<Specialty>()
+                .GetAllAsync(s => !s.IsDeleted);
 
-            var result = _mapper.Map<IReadOnlyList<SpecialtyDto>>(specialties);
+            var orderedSpecialties = specialties
+                .OrderBy(s => s.Name)
+                .ToList();
+
+            var result = _mapper.Map<IReadOnlyList<SpecialtyDto>>(orderedSpecialties);
 
             return ApiResponse<IReadOnlyList<SpecialtyDto>>.Ok(result);
         }
 
         public async Task<ApiResponse<SpecialtyDto>> GetByIdAsync(Guid specialtyId)
         {
-            var specialty = await _unitOfWork.Repository<Specialty>().GetByIdAsync(specialtyId);
+            var specialty = await _unitOfWork
+                .Repository<Specialty>()
+                .FirstOrDefaultAsync(s => s.Id == specialtyId && !s.IsDeleted);
 
             if (specialty is null)
                 throw new NotFoundException("Specialty not found.");
@@ -61,20 +69,28 @@ namespace Salamtak.services.Implementation_Of_Services
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
+            var name = dto.Name.Trim();
+            var normalizedName = name.ToLower();
+
             var exists = await _unitOfWork
                 .Repository<Specialty>()
-                .AnyAsync(s => s.Name.ToLower() == dto.Name.Trim().ToLower());
+                .AnyAsync(s =>
+                    !s.IsDeleted &&
+                    s.Name.ToLower() == normalizedName);
 
             if (exists)
                 throw new ConflictException("Specialty already exists.");
 
             var specialty = new Specialty
             {
-                Name = dto.Name.Trim(),
+                Name = name,
                 Description = dto.Description?.Trim()
             };
 
-            await _unitOfWork.Repository<Specialty>().AddAsync(specialty);
+            await _unitOfWork
+                .Repository<Specialty>()
+                .AddAsync(specialty);
+
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<SpecialtyDto>(specialty);
@@ -91,24 +107,31 @@ namespace Salamtak.services.Implementation_Of_Services
 
             var specialty = await _unitOfWork
                 .Repository<Specialty>()
-                .GetByIdAsync(dto.SpecialtyId);
+                .FirstOrDefaultAsync(s => s.Id == dto.SpecialtyId && !s.IsDeleted);
 
             if (specialty is null)
                 throw new NotFoundException("Specialty not found.");
 
+            var name = dto.Name.Trim();
+            var normalizedName = name.ToLower();
+
             var duplicateName = await _unitOfWork
                 .Repository<Specialty>()
                 .AnyAsync(s =>
+                    !s.IsDeleted &&
                     s.Id != dto.SpecialtyId &&
-                    s.Name.ToLower() == dto.Name.Trim().ToLower());
+                    s.Name.ToLower() == normalizedName);
 
             if (duplicateName)
                 throw new ConflictException("Another specialty with the same name already exists.");
 
-            specialty.Name = dto.Name.Trim();
+            specialty.Name = name;
             specialty.Description = dto.Description?.Trim();
 
-            _unitOfWork.Repository<Specialty>().Update(specialty);
+            _unitOfWork
+                .Repository<Specialty>()
+                .Update(specialty);
+
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<SpecialtyDto>(specialty);
@@ -118,19 +141,26 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse> DeleteAsync(Guid specialtyId)
         {
-            var specialty = await _unitOfWork.Repository<Specialty>().GetByIdAsync(specialtyId);
+            var specialty = await _unitOfWork
+                .Repository<Specialty>()
+                .FirstOrDefaultAsync(s => s.Id == specialtyId && !s.IsDeleted);
 
             if (specialty is null)
                 throw new NotFoundException("Specialty not found.");
 
             var hasDoctors = await _unitOfWork
                 .Repository<Doctor>()
-                .AnyAsync(d => d.SpecialtyId == specialtyId);
+                .AnyAsync(d =>
+                    !d.IsDeleted &&
+                    d.SpecialtyId == specialtyId);
 
             if (hasDoctors)
                 throw new ConflictException("Cannot delete specialty because it is assigned to doctors.");
 
-            _unitOfWork.Repository<Specialty>().SoftDelete(specialty);
+            _unitOfWork
+                .Repository<Specialty>()
+                .SoftDelete(specialty);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("Specialty deleted successfully.");

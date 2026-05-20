@@ -68,24 +68,41 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse> SoftDeleteUserAsync(Guid userId)
         {
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
+            var user = await _unitOfWork
+                .Repository<User>()
+                .GetByIdAsync(userId);
+
             if (user is null)
                 throw new NotFoundException("User not found.");
 
-            _unitOfWork.Repository<User>().SoftDelete(user);
+            if (user.Status == UserStatus.Suspended)
+                throw new ConflictException("User is already suspended.");
+
+            user.Status = UserStatus.Suspended;
+
+            _unitOfWork.Repository<User>().Update(user);
+
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Ok("User deleted successfully.");
+            return ApiResponse.Ok("User suspended successfully.");
         }
 
         private async Task<ApiResponse> ChangeStatusAsync(Guid userId, UserStatus status, string message)
         {
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
+            var user = await _unitOfWork
+                .Repository<User>()
+                .GetByIdAsync(userId);
+
             if (user is null)
                 throw new NotFoundException("User not found.");
 
+            if (user.Status == status)
+                throw new ConflictException($"User is already {status}.");
+
             user.Status = status;
+
             _unitOfWork.Repository<User>().Update(user);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok(message);

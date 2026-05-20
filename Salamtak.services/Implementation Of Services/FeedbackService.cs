@@ -32,10 +32,21 @@ namespace Salamtak.services.Implementation_Of_Services
         public async Task<ApiResponse<FeedbackDto>> CreateAsync(Guid patientId, CreateFeedbackDto dto)
         {
             var validationResult = await _createValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var appointment = await _unitOfWork.Repository<Appointment>().GetByIdAsync(dto.AppointmentId);
+            var patientExists = await _unitOfWork
+                .Repository<Patient>()
+                .AnyAsync(p => p.Id == patientId);
+
+            if (!patientExists)
+                throw new NotFoundException("Patient not found.");
+
+            var appointment = await _unitOfWork
+                .Repository<Appointment>()
+                .GetByIdAsync(dto.AppointmentId);
+
             if (appointment is null)
                 throw new NotFoundException("Appointment not found.");
 
@@ -45,8 +56,11 @@ namespace Salamtak.services.Implementation_Of_Services
             if (appointment.Status != AppointmentStatus.Completed)
                 throw new BadRequestException("Only completed appointments can be reviewed.");
 
-            var exists = await _unitOfWork.Repository<Feedback>().AnyAsync(f => f.AppointmentId == dto.AppointmentId);
-            if (exists)
+            var feedbackExists = await _unitOfWork
+                .Repository<Feedback>()
+                .AnyAsync(f => f.AppointmentId == dto.AppointmentId);
+
+            if (feedbackExists)
                 throw new ConflictException("Feedback already exists for this appointment.");
 
             var feedback = new Feedback
@@ -58,22 +72,32 @@ namespace Salamtak.services.Implementation_Of_Services
                 Comment = dto.Comment?.Trim()
             };
 
-            await _unitOfWork.Repository<Feedback>().AddAsync(feedback);
+            await _unitOfWork
+                .Repository<Feedback>()
+                .AddAsync(feedback);
+
+            await _unitOfWork.SaveChangesAsync();
+
             await RefreshDoctorRatingAsync(appointment.DoctorId);
 
             await _unitOfWork.SaveChangesAsync();
 
-            var result = _mapper.Map<FeedbackDto>(feedback);
+            var result = await BuildFeedbackDtoAsync(feedback);
+
             return ApiResponse<FeedbackDto>.Ok(result, "Feedback created successfully.");
         }
 
         public async Task<ApiResponse<FeedbackDto>> UpdateAsync(Guid patientId, UpdateFeedbackDto dto)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
+
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var feedback = await _unitOfWork.Repository<Feedback>().GetByIdAsync(dto.FeedbackId);
+            var feedback = await _unitOfWork
+                .Repository<Feedback>()
+                .GetByIdAsync(dto.FeedbackId);
+
             if (feedback is null)
                 throw new NotFoundException("Feedback not found.");
 
@@ -83,37 +107,86 @@ namespace Salamtak.services.Implementation_Of_Services
             feedback.Rating = dto.Rating;
             feedback.Comment = dto.Comment?.Trim();
 
-            _unitOfWork.Repository<Feedback>().Update(feedback);
+            _unitOfWork
+                .Repository<Feedback>()
+                .Update(feedback);
+
+            await _unitOfWork.SaveChangesAsync();
+
             await RefreshDoctorRatingAsync(feedback.DoctorId);
 
             await _unitOfWork.SaveChangesAsync();
 
-            var result = _mapper.Map<FeedbackDto>(feedback);
+            var result = await BuildFeedbackDtoAsync(feedback);
+
             return ApiResponse<FeedbackDto>.Ok(result, "Feedback updated successfully.");
         }
 
         public async Task<ApiResponse<IReadOnlyList<DoctorFeedbackDto>>> GetDoctorFeedbacksAsync(Guid doctorId)
         {
-            var doctorExists = await _unitOfWork.Repository<Doctor>().AnyAsync(d => d.Id == doctorId);
+            var doctorExists = await _unitOfWork
+                .Repository<Doctor>()
+                .AnyAsync(d => d.Id == doctorId);
+
             if (!doctorExists)
                 throw new NotFoundException("Doctor not found.");
 
-            var feedbacks = await _unitOfWork.Repository<Feedback>().GetAllAsync(f => f.DoctorId == doctorId);
-            var result = _mapper.Map<IReadOnlyList<DoctorFeedbackDto>>(feedbacks);
+            var feedbacks = await _unitOfWork
+                .Repository<Feedback>()
+                .GetAllAsync(f => f.DoctorId == doctorId && !f.IsDeleted);
+
+            var result = new List<DoctorFeedbackDto>();
+
+            foreach (var feedback in feedbacks.OrderByDescending(f => f.CreatedAt))
+            {
+                var patient = await _unitOfWork
+                    .Repository<Patient>()
+                    .GetByIdAsync(feedback.PatientId);
+
+                User? patientUser = null;
+
+                if (patient is not null)
+                {
+                    patientUser = await _unitOfWork
+                        .Repository<User>()
+                        .GetByIdAsync(patient.UserId);
+                }
+
+                result.Add(new DoctorFeedbackDto
+                {
+                    FeedbackId = feedback.Id,
+                    PatientName = patientUser?.FullName ?? string.Empty,
+                    Rating = feedback.Rating,
+                    Comment = feedback.Comment ?? string.Empty,
+                    CreatedAt = feedback.CreatedAt
+                });
+            }
 
             return ApiResponse<IReadOnlyList<DoctorFeedbackDto>>.Ok(result);
         }
 
-        public async Task<ApiResponse> DeleteAsync(Guid feedbackId)
+        public async Task<ApiResponse> DeleteAsync(Guid patientId, Guid feedbackId)
         {
-            var feedback = await _unitOfWork.Repository<Feedback>().GetByIdAsync(feedbackId);
+            var feedback = await _unitOfWork
+                .Repository<Feedback>()
+                .GetByIdAsync(feedbackId);
+
             if (feedback is null)
                 throw new NotFoundException("Feedback not found.");
 
+            if (feedback.PatientId != patientId)
+                throw new ForbiddenException("You cannot delete this feedback.");
+
             var doctorId = feedback.DoctorId;
 
-            _unitOfWork.Repository<Feedback>().SoftDelete(feedback);
+            _unitOfWork
+                .Repository<Feedback>()
+                .SoftDelete(feedback);
+
+            await _unitOfWork.SaveChangesAsync();
+
             await RefreshDoctorRatingAsync(doctorId);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("Feedback deleted successfully.");
@@ -121,14 +194,66 @@ namespace Salamtak.services.Implementation_Of_Services
 
         private async Task RefreshDoctorRatingAsync(Guid doctorId)
         {
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(doctorId);
+            var doctor = await _unitOfWork
+                .Repository<Doctor>()
+                .GetByIdAsync(doctorId);
+
             if (doctor is null)
                 return;
 
-            var feedbacks = await _unitOfWork.Repository<Feedback>().GetAllAsync(f => f.DoctorId == doctorId);
-            doctor.AverageRating = feedbacks.Any() ? feedbacks.Average(f => f.Rating) : 0;
+            var feedbacks = await _unitOfWork
+                .Repository<Feedback>()
+                .GetAllAsync(f => f.DoctorId == doctorId && !f.IsDeleted);
 
-            _unitOfWork.Repository<Doctor>().Update(doctor);
+            doctor.AverageRating = feedbacks.Any()
+                ? feedbacks.Average(f => f.Rating)
+                : 0;
+
+            _unitOfWork
+                .Repository<Doctor>()
+                .Update(doctor);
+        }
+
+        private async Task<FeedbackDto> BuildFeedbackDtoAsync(Feedback feedback)
+        {
+            var patient = await _unitOfWork
+                .Repository<Patient>()
+                .GetByIdAsync(feedback.PatientId);
+
+            User? patientUser = null;
+
+            if (patient is not null)
+            {
+                patientUser = await _unitOfWork
+                    .Repository<User>()
+                    .GetByIdAsync(patient.UserId);
+            }
+
+            var doctor = await _unitOfWork
+                .Repository<Doctor>()
+                .GetByIdAsync(feedback.DoctorId);
+
+            User? doctorUser = null;
+
+            if (doctor is not null)
+            {
+                doctorUser = await _unitOfWork
+                    .Repository<User>()
+                    .GetByIdAsync(doctor.UserId);
+            }
+
+            return new FeedbackDto
+            {
+                FeedbackId = feedback.Id,
+                PatientId = feedback.PatientId,
+                PatientName = patientUser?.FullName ?? string.Empty,
+                DoctorId = feedback.DoctorId,
+                DoctorName = doctorUser?.FullName ?? string.Empty,
+                AppointmentId = feedback.AppointmentId,
+                Rating = feedback.Rating,
+                Comment = feedback.Comment ?? string.Empty,
+                CreatedAt = feedback.CreatedAt
+            };
         }
     }
 }

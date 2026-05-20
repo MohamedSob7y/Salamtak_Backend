@@ -22,10 +22,12 @@ namespace Salamtak.Persistance.Configurations
                    .HasMaxLength(100);
 
             builder.HasIndex(s => s.Name)
-                   .IsUnique();
+                   .IsUnique()
+                   .HasFilter("[IsDeleted] = 0");
 
             builder.Property(s => s.Description)
-                   .HasMaxLength(500);
+                   .HasMaxLength(500)
+                   .IsRequired(false);
 
             builder.Property(s => s.CreatedAt)
                    .IsRequired();
