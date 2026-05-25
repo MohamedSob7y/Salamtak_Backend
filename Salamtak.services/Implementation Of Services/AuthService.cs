@@ -62,23 +62,28 @@ namespace Salamtak.services.Implementation_Of_Services
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var email = dto.Email.Trim();
+            var email = dto.Email.Trim().ToLower();
+            var phoneNumber = dto.PhoneNumber.Trim();
 
             var emailExists = await _unitOfWork
                 .Repository<User>()
-                .AnyAsync(u => u.Email == email);
+                .AnyAsync(u => u.Email.ToLower() == email);
 
             if (emailExists)
                 throw new ConflictException("Email already exists.");
 
-            if (!Enum.TryParse<Gender>(dto.Gender, true, out var gender))
-                throw new BadRequestException("Invalid gender.");
+            var phoneExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.PhoneNumber == phoneNumber);
+
+            if (phoneExists)
+                throw new ConflictException("Phone number already exists.");
 
             var user = new User
             {
                 FullName = dto.FullName.Trim(),
                 Email = email,
-                PhoneNumber = dto.PhoneNumber.Trim(),
+                PhoneNumber = phoneNumber,
                 PasswordHash = HashPassword(dto.Password),
                 Role = UserRole.Patient,
                 Status = UserStatus.Active
@@ -88,7 +93,7 @@ namespace Salamtak.services.Implementation_Of_Services
             {
                 User = user,
                 DateOfBirth = dto.DateOfBirth,
-                Gender = gender,
+                Gender = Enum.Parse<Gender>(dto.Gender, true),
                 Address = dto.Address?.Trim(),
                 BloodType = dto.BloodType?.Trim(),
                 Height = dto.Height,
@@ -116,14 +121,22 @@ namespace Salamtak.services.Implementation_Of_Services
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var email = dto.Email.Trim();
+            var email = dto.Email.Trim().ToLower();
+            var phoneNumber = dto.PhoneNumber.Trim();
 
             var emailExists = await _unitOfWork
                 .Repository<User>()
-                .AnyAsync(u => u.Email == email);
+                .AnyAsync(u => u.Email.ToLower() == email);
 
             if (emailExists)
                 throw new ConflictException("Email already exists.");
+
+            var phoneExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u => u.PhoneNumber == phoneNumber);
+
+            if (phoneExists)
+                throw new ConflictException("Phone number already exists.");
 
             var specialty = await _unitOfWork
                 .Repository<Specialty>()
@@ -136,7 +149,7 @@ namespace Salamtak.services.Implementation_Of_Services
             {
                 FullName = dto.FullName.Trim(),
                 Email = email,
-                PhoneNumber = dto.PhoneNumber.Trim(),
+                PhoneNumber = phoneNumber,
                 PasswordHash = HashPassword(dto.Password),
                 Role = UserRole.Doctor,
                 Status = UserStatus.Active

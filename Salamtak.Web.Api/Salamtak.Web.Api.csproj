@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Salamtak.Persistance\Salamtak.Persistance.csproj" />
     <ProjectReference Include="..\Salamtak.Presentation\Salamtak.Presentation.csproj" />
   </ItemGroup>

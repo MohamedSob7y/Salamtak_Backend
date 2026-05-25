@@ -2,8 +2,6 @@ namespace Salamtak.Shared.DTOs.AvailabilitySlots;
 
 public class CreateAvailabilitySlotDto
 {
-    public Guid DoctorId { get; set; }
-
     public Guid ClinicId { get; set; }
 
     public DateTime StartTime { get; set; }

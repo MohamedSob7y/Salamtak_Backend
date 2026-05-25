@@ -13,8 +13,14 @@ namespace Salamtak.Persistance.Configurations
     {
         public void Configure(EntityTypeBuilder<AvailabilitySlot> builder)
         {
-            builder.ToTable("AvailabilitySlots");
-
+           
+            builder.ToTable("AvailabilitySlots", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_AvailabilitySlot_EndTime_After_StartTime",
+                    "[EndTime] > [StartTime]"
+                );
+            });
             builder.HasKey(s => s.Id);
 
             builder.Property(s => s.DoctorId)
@@ -61,10 +67,8 @@ namespace Salamtak.Persistance.Configurations
             builder.HasIndex(s => new { s.DoctorId, s.StartTime, s.EndTime })
                    .IsUnique();
 
-            builder.HasCheckConstraint(
-                "CK_AvailabilitySlot_EndTime_After_StartTime",
-                "[EndTime] > [StartTime]"
-            );
+           
+           
         }
     }
 }

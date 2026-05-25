@@ -50,8 +50,38 @@ namespace Salamtak.services.Mapping
         private void AvailabilitySlotMapping()
         {
             CreateMap<AvailabilitySlot, AvailabilitySlotDto>()
-                .ForMember(dest => dest.SlotId,
-                    opt => opt.MapFrom(src => src.Id));
+        .ForMember(dest => dest.SlotId,
+            opt => opt.MapFrom(src => src.Id));
+
+            CreateMap<CreateAvailabilitySlotDto, AvailabilitySlot>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.DoctorId,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Doctor,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Clinic,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Appointment,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.IsAvailable,
+                    opt => opt.Ignore());
+
+            CreateMap<UpdateAvailabilitySlotDto, AvailabilitySlot>()
+                .ForMember(dest => dest.Id,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.DoctorId,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.ClinicId,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.IsAvailable,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Doctor,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Clinic,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Appointment,
+                    opt => opt.Ignore());
         }
 
         private void AppointmentMapping()

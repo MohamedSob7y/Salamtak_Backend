@@ -12,9 +12,10 @@ namespace Salamtak.services.Validators.AvailabilitySlots
     {
         public UpdateAvailabilitySlotValidator()
         {
-            RuleFor(x => x.SlotId).NotEmpty();
-
-            RuleFor(x => x.StartTime).NotEmpty();
+            RuleFor(x => x.StartTime)
+                .NotEmpty()
+                .GreaterThan(DateTime.UtcNow)
+                .WithMessage("Start time must be in the future.");
 
             RuleFor(x => x.EndTime)
                 .NotEmpty()

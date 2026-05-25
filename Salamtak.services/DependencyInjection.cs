@@ -29,7 +29,6 @@ namespace Salamtak.services
             services.AddScoped<IDoctorDocumentService, DoctorDocumentService>();
             services.AddScoped<IFeedbackService, FeedbackService>();
             services.AddScoped<INotificationService, NotificationService>();
-            //services.AddScoped<IRealtimeNotificationService, RealtimeNotificationService>();
             services.AddScoped<IAdminService, AdminService>();
             services.AddScoped<IAIService, AIService>();
             services.AddScoped<IJwtService, JwtService>();

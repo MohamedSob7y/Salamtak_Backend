@@ -13,4 +13,4 @@ public class AvailabilitySlotDto
     public DateTime EndTime { get; set; }
 
     public bool IsAvailable { get; set; }
-}
+} 

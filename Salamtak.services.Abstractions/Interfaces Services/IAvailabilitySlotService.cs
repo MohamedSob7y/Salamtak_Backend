@@ -16,14 +16,16 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 
         Task<ApiResponse<AvailabilitySlotDto>> GetByIdAsync(Guid slotId);
 
-        Task<ApiResponse<AvailabilitySlotDto>> CreateAsync(CreateAvailabilitySlotDto dto);
+        Task<ApiResponse<IReadOnlyList<AvailabilitySlotDto>>> SearchAvailableSlotsAsync(AvailableSlotSearchDto dto);
 
-        Task<ApiResponse<AvailabilitySlotDto>> UpdateAsync(UpdateAvailabilitySlotDto dto);
+        Task<ApiResponse<AvailabilitySlotDto>> CreateAsync(Guid doctorId, CreateAvailabilitySlotDto dto);
 
-        Task<ApiResponse> DeleteAsync(Guid slotId);
+        Task<ApiResponse<AvailabilitySlotDto>> UpdateAsync(Guid doctorId, Guid slotId, UpdateAvailabilitySlotDto dto);
 
-        Task<ApiResponse> MarkAsAvailableAsync(Guid slotId);
+        Task<ApiResponse> DeleteAsync(Guid doctorId, Guid slotId);
 
-        Task<ApiResponse> MarkAsUnavailableAsync(Guid slotId);
+        Task<ApiResponse> MarkAsAvailableAsync(Guid doctorId, Guid slotId);
+
+        Task<ApiResponse> MarkAsUnavailableAsync(Guid doctorId, Guid slotId);
     }
 }

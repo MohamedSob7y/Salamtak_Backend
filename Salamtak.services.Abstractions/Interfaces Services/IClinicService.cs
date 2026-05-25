@@ -14,10 +14,10 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 
         Task<ApiResponse<ClinicDto>> GetByIdAsync(Guid clinicId);
 
-        Task<ApiResponse<ClinicDto>> CreateAsync(CreateClinicDto dto);
+        Task<ApiResponse<ClinicDto>> CreateAsync(Guid doctorId, CreateClinicDto dto);
 
-        Task<ApiResponse<ClinicDto>> UpdateAsync(UpdateClinicDto dto);
+        Task<ApiResponse<ClinicDto>> UpdateAsync(Guid doctorId, Guid clinicId, UpdateClinicDto dto);
 
-        Task<ApiResponse> DeleteAsync(Guid clinicId);
+        Task<ApiResponse> DeleteAsync(Guid doctorId, Guid clinicId);
     }
 }

@@ -12,9 +12,8 @@ namespace Salamtak.services.Validators.AvailabilitySlots
     {
         public CreateAvailabilitySlotValidator()
         {
-            RuleFor(x => x.DoctorId).NotEmpty();
-
-            RuleFor(x => x.ClinicId).NotEmpty();
+            RuleFor(x => x.ClinicId)
+                .NotEmpty();
 
             RuleFor(x => x.StartTime)
                 .NotEmpty()

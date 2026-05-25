@@ -12,32 +12,21 @@ namespace Salamtak.services.Validators.Clinics
     {
         public UpdateClinicValidator()
         {
-            RuleFor(x => x.ClinicId).NotEmpty();
-
             RuleFor(x => x.Name)
                 .NotEmpty()
                 .MaximumLength(150);
 
             RuleFor(x => x.Address)
                 .NotEmpty()
-                .MaximumLength(250);
+                .MaximumLength(300);
 
             RuleFor(x => x.City)
                 .NotEmpty()
                 .MaximumLength(100);
 
             RuleFor(x => x.PhoneNumber)
-                .MaximumLength(20)
-                .Matches(@"^\+?[0-9]{10,15}$")
-                .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
-
-            RuleFor(x => x.Latitude)
-                .InclusiveBetween(-90, 90)
-                .When(x => x.Latitude.HasValue);
-
-            RuleFor(x => x.Longitude)
-                .InclusiveBetween(-180, 180)
-                .When(x => x.Longitude.HasValue);
+                .NotEmpty()
+                .MaximumLength(20);
         }
     }
 }
