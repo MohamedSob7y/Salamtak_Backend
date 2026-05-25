@@ -1,5 +1,4 @@
-https://chatgpt.com/share/6a0e2547-32b0-83ea-b661-3a930682f347
-https://chatgpt.com/share/6a0ccda3-3530-83ea-892d-38126b36a35b
+https://chatgpt.com/share/6a14939b-7adc-83ea-97e6-8fddcae1e39e
 
 
 1: Chatbot Problem هل المفروض يكون محتفظ بالAll Data and History of Patient ولا بمجرد ماقفل الapplication or Logout يمسح كل الرسالة؟ 
