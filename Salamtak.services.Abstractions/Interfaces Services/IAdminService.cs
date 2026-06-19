@@ -11,16 +11,26 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 {
     public interface IAdminService
     {
-        Task<ApiResponse<IReadOnlyList<DoctorVerificationRequestDto>>> GetPendingDoctorsAsync();
+        Task<ApiResponse<IReadOnlyList<DoctorVerificationRequestDto>>>
+          GetPendingDoctorsAsync();
 
-        Task<ApiResponse> VerifyDoctorAsync(Guid adminId, DoctorVerificationResultDto dto);
+        Task<ApiResponse> VerifyDoctorAsync(
+            Guid adminUserId,
+            DoctorVerificationResultDto dto);
 
-        Task<ApiResponse> RejectDoctorAsync(Guid adminId, DoctorVerificationResultDto dto);
+        Task<ApiResponse> RejectDoctorAsync(
+            Guid adminUserId,
+            DoctorVerificationResultDto dto);
 
-        Task<ApiResponse<IReadOnlyList<UserDto>>> GetUsersAsync();
+        Task<ApiResponse<IReadOnlyList<UserDto>>>
+            GetUsersAsync();
 
-        Task<ApiResponse> UpdateUserStatusAsync(UpdateUserStatusDto dto);
+        Task<ApiResponse> UpdateUserStatusAsync(
+            Guid adminUserId,
+            UpdateUserStatusDto dto);
 
-        Task<ApiResponse<AdminDashboardStatsDto>> GetDashboardStatsAsync();
+        Task<ApiResponse<AdminDashboardStatsDto>>
+            GetDashboardStatsAsync();
     }
 }
+

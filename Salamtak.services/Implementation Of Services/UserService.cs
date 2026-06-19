@@ -28,42 +28,79 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid userId)
         {
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
+            var user = await _unitOfWork
+                .Repository<User>()
+                .GetByIdAsync(userId);
+
             if (user is null)
                 throw new NotFoundException("User not found.");
 
             var result = _mapper.Map<UserDto>(user);
+
             return ApiResponse<UserDto>.Ok(result);
         }
 
-        public async Task<ApiResponse<UserDto>> UpdateUserProfileAsync(Guid userId, UpdateUserProfileDto dto)
+        public async Task<ApiResponse<UserDto>> UpdateUserProfileAsync(
+            Guid userId,
+            UpdateUserProfileDto dto)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
-            if (!validationResult.IsValid)
-                throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var user = await _unitOfWork.Repository<User>().GetByIdAsync(userId);
+            if (!validationResult.IsValid)
+            {
+                throw new AppValidationException(
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+            }
+
+            var user = await _unitOfWork
+                .Repository<User>()
+                .GetByIdAsync(userId);
+
             if (user is null)
                 throw new NotFoundException("User not found.");
 
-            user.FullName = dto.FullName.Trim();
-            user.PhoneNumber = dto.PhoneNumber.Trim();
+            var phoneNumber = dto.PhoneNumber.Trim();
 
-            _unitOfWork.Repository<User>().Update(user);
+            var phoneExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u =>
+                    u.Id != userId &&
+                    u.PhoneNumber == phoneNumber &&
+                    !u.IsDeleted);
+
+            if (phoneExists)
+                throw new ConflictException("Phone number already exists.");
+
+            user.FullName = dto.FullName.Trim();
+            user.PhoneNumber = phoneNumber;
+
+            _unitOfWork
+                .Repository<User>()
+                .Update(user);
+
             await _unitOfWork.SaveChangesAsync();
 
             var result = _mapper.Map<UserDto>(user);
-            return ApiResponse<UserDto>.Ok(result, "User profile updated successfully.");
+
+            return ApiResponse<UserDto>.Ok(
+                result,
+                "User profile updated successfully.");
         }
 
         public async Task<ApiResponse> SuspendUserAsync(Guid userId)
         {
-            return await ChangeStatusAsync(userId, UserStatus.Suspended, "User suspended successfully.");
+            return await ChangeStatusAsync(
+                userId,
+                UserStatus.Suspended,
+                "User suspended successfully.");
         }
 
         public async Task<ApiResponse> ActivateUserAsync(Guid userId)
         {
-            return await ChangeStatusAsync(userId, UserStatus.Active, "User activated successfully.");
+            return await ChangeStatusAsync(
+                userId,
+                UserStatus.Active,
+                "User activated successfully.");
         }
 
         public async Task<ApiResponse> SoftDeleteUserAsync(Guid userId)
@@ -80,14 +117,19 @@ namespace Salamtak.services.Implementation_Of_Services
 
             user.Status = UserStatus.Suspended;
 
-            _unitOfWork.Repository<User>().Update(user);
+            _unitOfWork
+                .Repository<User>()
+                .Update(user);
 
             await _unitOfWork.SaveChangesAsync();
 
             return ApiResponse.Ok("User suspended successfully.");
         }
 
-        private async Task<ApiResponse> ChangeStatusAsync(Guid userId, UserStatus status, string message)
+        private async Task<ApiResponse> ChangeStatusAsync(
+            Guid userId,
+            UserStatus status,
+            string message)
         {
             var user = await _unitOfWork
                 .Repository<User>()
@@ -101,7 +143,9 @@ namespace Salamtak.services.Implementation_Of_Services
 
             user.Status = status;
 
-            _unitOfWork.Repository<User>().Update(user);
+            _unitOfWork
+                .Repository<User>()
+                .Update(user);
 
             await _unitOfWork.SaveChangesAsync();
 

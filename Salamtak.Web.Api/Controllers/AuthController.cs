@@ -35,6 +35,8 @@ namespace Salamtak.Web.Api.Controllers
             return Ok(response);
         }
 
+
+
         [HttpPost("register-doctor")]
         [AllowAnonymous]
         public async Task<IActionResult> RegisterDoctor([FromBody] RegisterDoctorRequestDto dto)

@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using FluentValidation;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
@@ -40,20 +40,25 @@ namespace Salamtak.services.Implementation_Of_Services
 
             return ApiResponse<IReadOnlyList<DoctorVerificationRequestDto>>.Ok(result);
         }
-
-        public async Task<ApiResponse> VerifyDoctorAsync(Guid adminId, DoctorVerificationResultDto dto)
+        public async Task<ApiResponse> VerifyDoctorAsync(Guid adminUserId,DoctorVerificationResultDto dto)
         {
-            var validationResult = await _doctorVerificationValidator.ValidateAsync(dto);
+            dto.IsApproved = true;
+
+            var validationResult =
+                await _doctorVerificationValidator.ValidateAsync(dto);
 
             if (!validationResult.IsValid)
-                throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
+            {
+                throw new AppValidationException(
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+            }
 
-            var adminExists = await _unitOfWork
+            var admin = await _unitOfWork
                 .Repository<Admin>()
-                .AnyAsync(a => a.Id == adminId);
+                .FirstOrDefaultAsync(a => a.UserId == adminUserId);
 
-            if (!adminExists)
-                throw new NotFoundException("Admin not found.");
+            if (admin is null)
+                throw new NotFoundException("Admin profile not found.");
 
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
@@ -62,49 +67,71 @@ namespace Salamtak.services.Implementation_Of_Services
             if (doctor is null)
                 throw new NotFoundException("Doctor not found.");
 
-            if (doctor.VerificationStatus == DoctorVerificationStatus.Verified && doctor.IsVerified)
-                throw new ConflictException("Doctor is already verified.");
+            if (doctor.VerificationStatus ==
+                    DoctorVerificationStatus.Verified &&
+                doctor.IsVerified)
+            {
+                throw new ConflictException(
+                    "Doctor is already verified.");
+            }
 
             var documents = await _unitOfWork
                 .Repository<DoctorDocument>()
                 .GetAllAsync(d => d.DoctorId == doctor.Id);
 
             if (!documents.Any())
-                throw new BadRequestException("Doctor has no uploaded documents.");
+            {
+                throw new BadRequestException(
+                    "Doctor has no uploaded documents.");
+            }
 
             doctor.IsVerified = true;
-            doctor.VerificationStatus = DoctorVerificationStatus.Verified;
+            doctor.VerificationStatus =
+                DoctorVerificationStatus.Verified;
 
             foreach (var document in documents)
             {
                 document.IsVerified = true;
-                document.VerifiedByAdminId = adminId;
+
+                // لازم Admin.Id وليس User.Id
+                document.VerifiedByAdminId = admin.Id;
+
                 document.VerifiedAt = DateTime.UtcNow;
                 document.RejectionReason = null;
 
-                _unitOfWork.Repository<DoctorDocument>().Update(document);
+                _unitOfWork
+                    .Repository<DoctorDocument>()
+                    .Update(document);
             }
 
-            _unitOfWork.Repository<Doctor>().Update(doctor);
+            _unitOfWork
+                .Repository<Doctor>()
+                .Update(doctor);
 
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Ok("Doctor verified successfully.");
+            return ApiResponse.Ok(
+                "Doctor verified successfully.");
         }
-
-        public async Task<ApiResponse> RejectDoctorAsync(Guid adminId, DoctorVerificationResultDto dto)
+        public async Task<ApiResponse> RejectDoctorAsync(Guid adminUserId, DoctorVerificationResultDto dto)
         {
-            var validationResult = await _doctorVerificationValidator.ValidateAsync(dto);
+            dto.IsApproved = false;
+
+            var validationResult =
+                await _doctorVerificationValidator.ValidateAsync(dto);
 
             if (!validationResult.IsValid)
-                throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
+            {
+                throw new AppValidationException(
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+            }
 
-            var adminExists = await _unitOfWork
+            var admin = await _unitOfWork
                 .Repository<Admin>()
-                .AnyAsync(a => a.Id == adminId);
+                .FirstOrDefaultAsync(a => a.UserId == adminUserId);
 
-            if (!adminExists)
-                throw new NotFoundException("Admin not found.");
+            if (admin is null)
+                throw new NotFoundException("Admin profile not found.");
 
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
@@ -113,13 +140,26 @@ namespace Salamtak.services.Implementation_Of_Services
             if (doctor is null)
                 throw new NotFoundException("Doctor not found.");
 
+            if (doctor.VerificationStatus ==
+                DoctorVerificationStatus.Rejected)
+            {
+                throw new ConflictException(
+                    "Doctor is already rejected.");
+            }
+
             if (string.IsNullOrWhiteSpace(dto.RejectionReason))
-                throw new BadRequestException("Rejection reason is required.");
+            {
+                throw new BadRequestException(
+                    "Rejection reason is required.");
+            }
 
             doctor.IsVerified = false;
-            doctor.VerificationStatus = DoctorVerificationStatus.Rejected;
+            doctor.VerificationStatus =
+                DoctorVerificationStatus.Rejected;
 
-            _unitOfWork.Repository<Doctor>().Update(doctor);
+            _unitOfWork
+                .Repository<Doctor>()
+                .Update(doctor);
 
             var documents = await _unitOfWork
                 .Repository<DoctorDocument>()
@@ -128,18 +168,24 @@ namespace Salamtak.services.Implementation_Of_Services
             foreach (var document in documents)
             {
                 document.IsVerified = false;
-                document.VerifiedByAdminId = adminId;
-                document.VerifiedAt = DateTime.UtcNow;
-                document.RejectionReason = dto.RejectionReason.Trim();
 
-                _unitOfWork.Repository<DoctorDocument>().Update(document);
+                // Admin.Id وليس User.Id
+                document.VerifiedByAdminId = admin.Id;
+
+                document.VerifiedAt = DateTime.UtcNow;
+                document.RejectionReason =
+                    dto.RejectionReason.Trim();
+
+                _unitOfWork
+                    .Repository<DoctorDocument>()
+                    .Update(document);
             }
 
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Ok("Doctor rejected successfully.");
+            return ApiResponse.Ok(
+                "Doctor rejected successfully.");
         }
-
         public async Task<ApiResponse<IReadOnlyList<UserDto>>> GetUsersAsync()
         {
             var users = await _unitOfWork
@@ -150,13 +196,22 @@ namespace Salamtak.services.Implementation_Of_Services
 
             return ApiResponse<IReadOnlyList<UserDto>>.Ok(result);
         }
-
-        public async Task<ApiResponse> UpdateUserStatusAsync(UpdateUserStatusDto dto)
+        public async Task<ApiResponse> UpdateUserStatusAsync(Guid adminUserId, UpdateUserStatusDto dto)
         {
-            var validationResult = await _updateUserStatusValidator.ValidateAsync(dto);
+            var validationResult =
+                await _updateUserStatusValidator.ValidateAsync(dto);
 
             if (!validationResult.IsValid)
-                throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
+            {
+                throw new AppValidationException(
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+            }
+
+            if (dto.UserId == adminUserId)
+            {
+                throw new ForbiddenException(
+                    "Admin cannot change their own account status.");
+            }
 
             var user = await _unitOfWork
                 .Repository<User>()
@@ -165,18 +220,39 @@ namespace Salamtak.services.Implementation_Of_Services
             if (user is null)
                 throw new NotFoundException("User not found.");
 
-            if (!Enum.TryParse<UserStatus>(dto.Status, true, out var status))
-                throw new BadRequestException("Invalid user status.");
+            // منع إدارة Admin آخر من هذا الـ endpoint
+            if (user.Role == UserRole.Admin)
+            {
+                throw new ForbiddenException(
+                    "Admin accounts cannot be managed from this endpoint.");
+            }
+
+            if (!Enum.TryParse<UserStatus>(
+                    dto.Status,
+                    true,
+                    out var status))
+            {
+                throw new BadRequestException(
+                    "Invalid user status.");
+            }
+
+            if (user.Status == status)
+            {
+                throw new ConflictException(
+                    $"User is already {status}.");
+            }
 
             user.Status = status;
 
-            _unitOfWork.Repository<User>().Update(user);
+            _unitOfWork
+                .Repository<User>()
+                .Update(user);
 
             await _unitOfWork.SaveChangesAsync();
 
-            return ApiResponse.Ok("User status updated successfully.");
+            return ApiResponse.Ok(
+                "User status updated successfully.");
         }
-
         public async Task<ApiResponse<AdminDashboardStatsDto>> GetDashboardStatsAsync()
         {
             var doctors = await _unitOfWork
