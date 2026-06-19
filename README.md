@@ -1,5 +1,5 @@
-https://chatgpt.com/share/6a14939b-7adc-83ea-97e6-8fddcae1e39e
-https://chatgpt.com/share/6a14942c-bb94-83ea-9aff-2dfcc6bd05d9
+https://chatgpt.com/share/6a356f6d-4c38-83ea-b3c9-72fb990f45e2
+https://chatgpt.com/share/6a35703c-0958-83ea-9e54-f92a036936cd
 
 1: Chatbot Problem هل المفروض يكون محتفظ بالAll Data and History of Patient ولا بمجرد ماقفل الapplication or Logout يمسح كل الرسالة؟ 
 2:Cashing  Save Data For Many Users instead of send 100 Request at the Same Time  to Server => Send 1 Request  To Server and Save Data Temporary in Cash For 99 Reuqest   
