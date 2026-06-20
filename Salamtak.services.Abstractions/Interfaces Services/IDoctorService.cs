@@ -12,15 +12,10 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
     public interface IDoctorService
     {
         Task<ApiResponse<PagedResult<DoctorCardDto>>> SearchDoctorsAsync(DoctorSearchRequestDto dto);
-
         Task<ApiResponse<DoctorDetailsDto>> GetDoctorDetailsAsync(Guid doctorId);
-
-        Task<ApiResponse<DoctorProfileDto>> GetProfileAsync(Guid doctorId);
-
-        Task<ApiResponse<DoctorProfileDto>> UpdateProfileAsync(Guid doctorId, UpdateDoctorProfileDto dto);
-
-        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>> GetAppointmentsAsync(Guid doctorId);
-
-        Task<ApiResponse<DoctorRatingSummaryDto>> GetRatingSummaryAsync(Guid doctorId);
+        Task<ApiResponse<DoctorProfileDto>> GetProfileAsync(Guid doctorUserId);
+        Task<ApiResponse<DoctorProfileDto>> UpdateProfileAsync(Guid doctorUserId, UpdateDoctorProfileDto dto);
+        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>> GetAppointmentsAsync(Guid doctorUserId);
+        Task<ApiResponse<DoctorRatingSummaryDto>> GetRatingSummaryAsync(Guid doctorUserId);
     }
 }

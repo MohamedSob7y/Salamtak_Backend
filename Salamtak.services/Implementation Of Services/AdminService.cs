@@ -253,32 +253,46 @@ namespace Salamtak.services.Implementation_Of_Services
             return ApiResponse.Ok(
                 "User status updated successfully.");
         }
+      
         public async Task<ApiResponse<AdminDashboardStatsDto>> GetDashboardStatsAsync()
         {
-            var doctors = await _unitOfWork
-                .Repository<Doctor>()
-                .GetAllAsync();
-
-            var appointments = await _unitOfWork
-                .Repository<Appointment>()
-                .GetAllAsync();
-
-            var patients = await _unitOfWork
-                .Repository<Patient>()
-                .GetAllAsync();
+            var users = await _unitOfWork.Repository<User>().GetAllAsync();
+            var doctors = await _unitOfWork.Repository<Doctor>().GetAllAsync();
+            var admins = await _unitOfWork.Repository<Admin>().GetAllAsync();
+            var patients = await _unitOfWork.Repository<Patient>().GetAllAsync();
+            var appointments = await _unitOfWork.Repository<Appointment>().GetAllAsync();
 
             var stats = new AdminDashboardStatsDto
             {
+                TotalUsers = users.Count,
+
                 TotalPatients = patients.Count,
+
                 TotalDoctors = doctors.Count,
-                VerifiedDoctors = doctors.Count(d => d.IsVerified),
-                PendingDoctors = doctors.Count(d => d.VerificationStatus == DoctorVerificationStatus.Pending),
+
+                TotalAdmins = admins.Count,
+
+                VerifiedDoctors = doctors.Count(d =>
+                    d.VerificationStatus == DoctorVerificationStatus.Verified),
+
+                PendingDoctors = doctors.Count(d =>
+                    d.VerificationStatus == DoctorVerificationStatus.Pending),
+
+                RejectedDoctors = doctors.Count(d =>
+                    d.VerificationStatus == DoctorVerificationStatus.Rejected),
+
                 TotalAppointments = appointments.Count,
-                CompletedAppointments = appointments.Count(a => a.Status == AppointmentStatus.Completed),
-                CancelledAppointments = appointments.Count(a => a.Status == AppointmentStatus.Cancelled)
+
+                CompletedAppointments = appointments.Count(a =>
+                    a.Status == AppointmentStatus.Completed),
+
+                CancelledAppointments = appointments.Count(a =>
+                    a.Status == AppointmentStatus.Cancelled)
             };
 
-            return ApiResponse<AdminDashboardStatsDto>.Ok(stats);
+            return ApiResponse<AdminDashboardStatsDto>.Ok(
+                stats,
+                "Dashboard statistics retrieved successfully.");
         }
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using FluentValidation;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
+using Salamtak.Domain.Models.Enums;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Exceptions;
 using Salamtak.Shared.DTOs.Appointments;
@@ -137,52 +138,67 @@ namespace Salamtak.services.Implementation_Of_Services
             return ApiResponse<PagedResult<DoctorCardDto>>.Ok(result);
         }
 
-        public async Task<ApiResponse<DoctorDetailsDto>> GetDoctorDetailsAsync(Guid doctorId)
+       
+        public async Task<ApiResponse<DoctorDetailsDto>>GetDoctorDetailsAsync(Guid doctorId)
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .GetByIdAsync(doctorId);
+                .FirstOrDefaultAsync(d =>
+                    d.Id == doctorId &&
+                    d.IsVerified &&
+                    d.VerificationStatus ==
+                        DoctorVerificationStatus.Verified);
 
             if (doctor is null)
-                throw new NotFoundException("Doctor not found.");
+            {
+                throw new NotFoundException(
+                    "Verified doctor not found.");
+            }
 
             await LoadDoctorNavigationDataAsync(doctor);
             await LoadDoctorFeedbacksAsync(doctor);
 
-            var result = _mapper.Map<DoctorDetailsDto>(doctor);
+            var result =
+                _mapper.Map<DoctorDetailsDto>(doctor);
 
-            return ApiResponse<DoctorDetailsDto>.Ok(result);
+            return ApiResponse<DoctorDetailsDto>.Ok(
+                result,
+                "Doctor details retrieved successfully.");
         }
-
-        public async Task<ApiResponse<DoctorProfileDto>> GetProfileAsync(Guid doctorId)
+        public async Task<ApiResponse<DoctorProfileDto>> GetProfileAsync(Guid doctorUserId)
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .GetByIdAsync(doctorId);
+                .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
             if (doctor is null)
-                throw new NotFoundException("Doctor not found.");
+                throw new NotFoundException("Doctor profile not found.");
 
             await LoadDoctorNavigationDataAsync(doctor);
 
             var result = _mapper.Map<DoctorProfileDto>(doctor);
 
-            return ApiResponse<DoctorProfileDto>.Ok(result);
+            return ApiResponse<DoctorProfileDto>.Ok(
+                result,
+                "Doctor profile retrieved successfully.");
         }
-
-        public async Task<ApiResponse<DoctorProfileDto>> UpdateProfileAsync(Guid doctorId, UpdateDoctorProfileDto dto)
+       
+        public async Task<ApiResponse<DoctorProfileDto>> UpdateProfileAsync(Guid doctorUserId,UpdateDoctorProfileDto dto)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
 
             if (!validationResult.IsValid)
-                throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
+            {
+                throw new AppValidationException(
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+            }
 
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .GetByIdAsync(doctorId);
+                .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
             if (doctor is null)
-                throw new NotFoundException("Doctor not found.");
+                throw new NotFoundException("Doctor profile not found.");
 
             var specialty = await _unitOfWork
                 .Repository<Specialty>()
@@ -193,10 +209,21 @@ namespace Salamtak.services.Implementation_Of_Services
 
             var user = await _unitOfWork
                 .Repository<User>()
-                .GetByIdAsync(doctor.UserId);
+                .GetByIdAsync(doctorUserId);
 
             if (user is null)
                 throw new NotFoundException("User not found.");
+
+            // Prevent duplicate phone number
+            var phoneExists = await _unitOfWork
+                .Repository<User>()
+                .AnyAsync(u =>
+                    u.PhoneNumber == dto.PhoneNumber.Trim() &&
+                    u.Id != doctorUserId);
+
+            if (phoneExists)
+                throw new ConflictException(
+                    "Phone number is already used by another user.");
 
             user.FullName = dto.FullName.Trim();
             user.PhoneNumber = dto.PhoneNumber.Trim();
@@ -214,27 +241,36 @@ namespace Salamtak.services.Implementation_Of_Services
             doctor.User = user;
             doctor.Specialty = specialty;
 
+            var clinics = await _unitOfWork
+                .Repository<Clinic>()
+                .GetAllAsync(c => c.DoctorId == doctor.Id);
+
+            doctor.Clinics = clinics.ToList();
+
             var result = _mapper.Map<DoctorProfileDto>(doctor);
 
-            return ApiResponse<DoctorProfileDto>.Ok(result, "Doctor profile updated successfully.");
+            return ApiResponse<DoctorProfileDto>.Ok(
+                result,
+                "Doctor profile updated successfully.");
         }
-
-        public async Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>> GetAppointmentsAsync(Guid doctorId)
+       
+        public async Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetAppointmentsAsync(Guid doctorUserId)
         {
-            var doctorExists = await _unitOfWork
+            var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .AnyAsync(d => d.Id == doctorId);
+                .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
-            if (!doctorExists)
-                throw new NotFoundException("Doctor not found.");
+            if (doctor is null)
+                throw new NotFoundException("Doctor profile not found.");
 
             var appointments = await _unitOfWork
                 .Repository<Appointment>()
-                .GetAllAsync(a => a.DoctorId == doctorId);
+                .GetAllAsync(a => a.DoctorId == doctor.Id);
 
             var result = new List<DoctorAppointmentDto>();
 
-            foreach (var appointment in appointments.OrderByDescending(a => a.CreatedAt))
+            foreach (var appointment in appointments
+                         .OrderByDescending(a => a.CreatedAt))
             {
                 var patient = await _unitOfWork
                     .Repository<Patient>()
@@ -242,7 +278,9 @@ namespace Salamtak.services.Implementation_Of_Services
 
                 var patientUser = patient is null
                     ? null
-                    : await _unitOfWork.Repository<User>().GetByIdAsync(patient.UserId);
+                    : await _unitOfWork
+                        .Repository<User>()
+                        .GetByIdAsync(patient.UserId);
 
                 var slot = await _unitOfWork
                     .Repository<AvailabilitySlot>()
@@ -252,40 +290,46 @@ namespace Salamtak.services.Implementation_Of_Services
                 {
                     AppointmentId = appointment.Id,
                     PatientName = patientUser?.FullName ?? string.Empty,
-                    AppointmentDate = slot?.StartTime ?? appointment.CreatedAt,
+                    AppointmentDate =
+                        slot?.StartTime ?? appointment.CreatedAt,
                     Status = appointment.Status.ToString(),
                     Reason = appointment.Reason ?? string.Empty
                 });
             }
 
-            return ApiResponse<IReadOnlyList<DoctorAppointmentDto>>.Ok(result);
+            return ApiResponse<IReadOnlyList<DoctorAppointmentDto>>.Ok(
+                result,
+                "Doctor appointments retrieved successfully.");
         }
-
-        public async Task<ApiResponse<DoctorRatingSummaryDto>> GetRatingSummaryAsync(Guid doctorId)
+      
+        public async Task<ApiResponse<DoctorRatingSummaryDto>>GetRatingSummaryAsync(Guid doctorUserId)
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .GetByIdAsync(doctorId);
+                .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
             if (doctor is null)
-                throw new NotFoundException("Doctor not found.");
+                throw new NotFoundException("Doctor profile not found.");
 
             var feedbacks = await _unitOfWork
                 .Repository<Feedback>()
-                .GetAllAsync(f => f.DoctorId == doctorId);
+                .GetAllAsync(f => f.DoctorId == doctor.Id);
+
+            var averageRating = feedbacks.Any()
+                ? feedbacks.Average(f => f.Rating)
+                : doctor.AverageRating;
 
             var result = new DoctorRatingSummaryDto
             {
                 DoctorId = doctor.Id,
-                AverageRating = feedbacks.Any()
-                    ? feedbacks.Average(f => f.Rating)
-                    : doctor.AverageRating,
+                AverageRating = averageRating,
                 TotalReviews = feedbacks.Count
             };
 
-            return ApiResponse<DoctorRatingSummaryDto>.Ok(result);
+            return ApiResponse<DoctorRatingSummaryDto>.Ok(
+                result,
+                "Doctor rating summary retrieved successfully.");
         }
-
         private async Task LoadDoctorNavigationDataAsync(Doctor doctor)
         {
             var user = await _unitOfWork
