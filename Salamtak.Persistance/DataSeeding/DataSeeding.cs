@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Salamtak.Domain.Contracts;
+using Salamtak.Domain.Models.Common_Entity;
 using Salamtak.Persistance.Context;
 using System;
 using System.Collections.Generic;
@@ -10,22 +11,26 @@ using System.Threading.Tasks;
 
 namespace Salamtak.Persistance.DataSeeding
 {
+    
     public class DataSeeding : IDataSeeding
     {
         private readonly SalamtakDBContext _salamtakDBContext;
+
         public DataSeeding(SalamtakDBContext salamtakDBContext)
         {
             _salamtakDBContext = salamtakDBContext;
         }
-
-        public void Intialize()
+        public async Task IntializeAsync()
         {
             //try
             //{
-            //    Check if Tables Is Empty Or Not عشان ادخله الداتا => So Need object From DbContext
-            //        var hasProduct = _storeDBContext.Products.Any();
-            //    var hasBrand = _storeDBContext.productBrands.Any();
-            //    var HasTypes = _storeDBContext.productTypes.Any();
+            //    //Check if Tables Is Empty Or Not عشان ادخله الداتا => So Need object From DbContext
+            //    var hasProduct = await _salamtakDBContext.Products.AnyAsync();//this Database hits must be work as Ascync لان انا بحول اى Function to Async فى تلت حالات 
+            //    //1: Database Operation Hits  2:External Api Call    3: File input or output Reader
+            //    //any Function Work as Async => Return Type is Task 
+            //    //All Linq Method has method With Async  
+            //    var hasBrand = await _salamtakDBContext.productBrands.AnyAsync();
+            //    var HasTypes = await _salamtakDBContext.productTypes.AnyAsync();
             //    if (hasProduct && hasBrand && HasTypes)
             //    {
             //        return;//كدة معناناها فى Data in Tables كدة مش هينفع اعمل Seeding For Data 
@@ -36,20 +41,20 @@ namespace Salamtak.Persistance.DataSeeding
             //    if (!hasBrand)
             //    {
             //        //اقرا الداتا + AddRange
-            //        SeedDataFromJson<ProductBrand, int>("brands.json", _storeDBContext.productBrands);
+            //        await SeedDataFromJson<ProductBrand, int>("brands.json", _storeDBContext.productBrands);
             //    }
             //    if (!HasTypes)
             //    {
             //        //Read Data + AddRange
-            //        SeedDataFromJson<ProductType, int>("types.json", _storeDBContext.productTypes);
+            //        await SeedDataFromJson<ProductType, int>("types.json", _storeDBContext.productTypes);
 
             //    }
-            //    _storeDBContext.SaveChanges();
+            //    await _salamtakDBContext.SaveChangesAsync();
             //    //محتاج Savehcnages in Database الاول 
             //    if (!hasProduct)
             //    {
-            //        SeedDataFromJson<Product, int>("products.json", _storeDBContext.Products);
-            //        _storeDBContext.SaveChanges();
+            //        await SeedDataFromJson<Product, int>("products.json", _storeDBContext.Products);
+            //        await _salamtakDBContext.SaveChangesAsync();
             //    }
 
             //}
@@ -58,34 +63,35 @@ namespace Salamtak.Persistance.DataSeeding
             //    Console.WriteLine($"An Error Accured During Seeding Data {ex}");
             //}
         }
-        //private void SeedDataFromJson<T, Tkey>(string filename, DbSet<T> dbset) where T : BaseEntity<Tkey>
-
-        //{
-        //    //this Full Path of FIles Brand=> F:\Projects\E_Commerce_System\E_Commerce.Persistance\Data\Json Files\brands.json
-        //    //Default Path => Layer اللى بتعمل Run
-        //    var filepath = @"..\Salamtak.Persistance\Json Files\" + filename;//.. دى معنانا خرجنى برة Web.api
-        //    if (!File.Exists(filepath))
-        //    {
-        //        throw new FileNotFoundException("Json File not Found", filepath);
-        //    }
-
-        //    try
-        //    {
-
-        //        var DataStream = File.OpenRead(filepath);
-        //        var Data = JsonSerializer.Deserialize<List<T>>(DataStream, new JsonSerializerOptions
-        //        {
-        //            PropertyNameCaseInsensitive = true,
-        //        });
-        //        if (Data is not null)
-        //        {
-        //            dbset.AddRange(Data);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Error While Reading Data From Json {ex}");
-        //    }
-        //}
+        private async Task SeedDataFromJson<T>(string filename, DbSet<T> dbset) where T : BaseEntity
+            //Read DataFromJson+AddRang DataLocal in Database
+        {
+            //this Full Path of FIles Brand=> F:\Projects\E_Commerce_System\E_Commerce.Persistance\Data\Json Files\brands.json
+            //Default Path => Layer اللى بتعمل Run
+            var filepath = @"..\Salamtak.Persistance\Json Files\" + filename;//.. دى معنانا خرجنى برة Web.api
+            if (!File.Exists(filepath))
+            {
+                throw new FileNotFoundException("Json File not Found", filepath);
+            }
+            //Read Data after Checking Pathof File
+            try
+            {
+                //var Data = File.ReadAllText(filepath);//Read Data As String ولو الفايلات كبيرة هتبقى مشكلة =>So Open Stream with File To REad Data as Bytes When Serializing عشان مش عايز اعمل Load Data in Ram
+                var DataStream = File.OpenRead(filepath);//Read File From Stream 
+                var Data = await JsonSerializer.DeserializeAsync<List<T>>(DataStream, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,//To Ignore Case Senstives 
+                });//Read From Stream then Convert this To ListOfT
+                if (Data is not null)
+                {
+                    await dbset.AddRangeAsync(Data);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error While Reading Data From Json {ex}");
+            }
+        }
     }
+
 }

@@ -8,6 +8,6 @@ namespace Salamtak.Domain.Contracts
 {
     public interface IDataSeeding
     {
-        void Intialize();
+        Task IntializeAsync();
     }
 }

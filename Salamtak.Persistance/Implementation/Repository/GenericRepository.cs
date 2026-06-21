@@ -23,15 +23,11 @@ namespace Salamtak.Persistance.Implementation.Repository
             _dbSet = _context.Set<TEntity>();
         }
 
-        public async Task AddAsync(TEntity entity)
-        {
-            await _dbSet.AddAsync(entity);
-        }
+        public async Task AddAsync(TEntity entity)=> await _dbSet.AddAsync(entity);
+        
 
-        public async Task AddRangeAsync(IEnumerable<TEntity> entities)
-        {
-            await _dbSet.AddRangeAsync(entities);
-        }
+        public async Task AddRangeAsync(IEnumerable<TEntity> entities) => await _dbSet.AddRangeAsync(entities);
+        
 
         public void Update(TEntity entity)
         {

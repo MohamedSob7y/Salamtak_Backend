@@ -22,7 +22,7 @@ namespace Salamtak.Web.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             #region Create Application
 
@@ -192,9 +192,8 @@ namespace Salamtak.Web.Api
 
             #region Database Migration + Seeding
 
-            app.MigrateDatabase();
-
-            app.SeedData();
+            await app.MigrateDatabaseAsync();//Call Extention Method
+            await app.SeedDataAsync();//Call ExtentionMethods
 
             #endregion
 

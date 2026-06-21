@@ -9,9 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Salamtak.services.Abstractions\Salamtak.services.Abstractions.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 </Project>
