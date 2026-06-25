@@ -10,16 +10,27 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 {
     public interface IAppointmentService
     {
-        Task<ApiResponse<AppointmentDto>> BookAppointmentAsync(Guid patientId, BookAppointmentDto dto);
 
-        Task<ApiResponse> CancelAppointmentAsync(Guid userId, CancelAppointmentDto dto);
+        Task<ApiResponse<AppointmentDto>> BookAppointmentAsync(
+            Guid patientUserId,
+            BookAppointmentDto dto);
 
-        Task<ApiResponse> CompleteAppointmentAsync(Guid doctorId, CompleteAppointmentDto dto);
+        Task<ApiResponse> CancelAppointmentAsync(
+            Guid currentUserId,
+            CancelAppointmentDto dto);
 
-        Task<ApiResponse<AppointmentDetailsDto>> GetByIdAsync(Guid appointmentId);
+        Task<ApiResponse> CompleteAppointmentAsync(
+            Guid doctorUserId,
+            CompleteAppointmentDto dto);
 
-        Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>> GetPatientAppointmentsAsync(Guid patientId);
+        Task<ApiResponse<AppointmentDetailsDto>> GetByIdAsync(
+            Guid currentUserId,
+            Guid appointmentId);
 
-        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>> GetDoctorAppointmentsAsync(Guid doctorId);
+        Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>
+            GetPatientAppointmentsAsync(Guid patientUserId);
+
+        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>
+            GetDoctorAppointmentsAsync(Guid doctorUserId);
     }
 }
