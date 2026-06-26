@@ -7,7 +7,8 @@ https://chatgpt.com/share/6a3d9b5e-cc24-83ea-819b-ea858ffc4638
 5: Seeding Data From Where?
 6: Attachment Services if need?
 7: Controllers
-
+8: Value Resolver
+9:Rate Limitation
 
 
 https://chatgpt.com/share/6a036111-fa38-83ea-8e64-269221b1e8e1  How To Use Github in this Repository
