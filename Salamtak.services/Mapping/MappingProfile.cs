@@ -156,24 +156,37 @@ namespace Salamtak.services.Mapping
                 .ForMember(dest => dest.Status,
                     opt => opt.MapFrom(src => src.Status.ToString()));
 
+            //CreateMap<Appointment, DoctorAppointmentDto>()
+            //    .ForMember(dest => dest.AppointmentId,
+            //        opt => opt.MapFrom(src => src.Id))
+            //    .ForMember(dest => dest.PatientName,
+            //        opt => opt.MapFrom(src =>
+            //            src.Patient != null && src.Patient.User != null
+            //                ? src.Patient.User.FullName
+            //                : string.Empty))
+            //    .ForMember(dest => dest.AppointmentDate,
+            //        opt => opt.MapFrom(src =>
+            //            src.AvailabilitySlot != null
+            //                ? src.AvailabilitySlot.StartTime
+            //                : src.CreatedAt))
+            //    .ForMember(dest => dest.Status,
+            //        opt => opt.MapFrom(src => src.Status.ToString()))
+            //    .ForMember(dest => dest.Reason,
+            //        opt => opt.MapFrom(src => src.Reason ?? string.Empty));
             CreateMap<Appointment, DoctorAppointmentDto>()
-                .ForMember(dest => dest.AppointmentId,
-                    opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.PatientName,
-                    opt => opt.MapFrom(src =>
-                        src.Patient != null && src.Patient.User != null
-                            ? src.Patient.User.FullName
-                            : string.Empty))
-                .ForMember(dest => dest.AppointmentDate,
-                    opt => opt.MapFrom(src =>
-                        src.AvailabilitySlot != null
-                            ? src.AvailabilitySlot.StartTime
-                            : src.CreatedAt))
-                .ForMember(dest => dest.Status,
-                    opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.Reason,
-                    opt => opt.MapFrom(src => src.Reason ?? string.Empty));
-        }
+    .ForMember(
+        dest => dest.AppointmentId,
+        opt => opt.MapFrom(src => src.Id))
+    .ForMember(
+        dest => dest.PatientName,
+        opt => opt.MapFrom(src => src.Patient.User.FullName))
+    .ForMember(
+        dest => dest.AppointmentDate,
+        opt => opt.MapFrom(src => src.AvailabilitySlot.StartTime))
+    .ForMember(
+        dest => dest.Status,
+        opt => opt.MapFrom(src => src.Status.ToString()))
+    .ForMember(dest => dest.Reason,opt => opt.MapFrom(src => src.Reason ?? string.Empty));}
 
         private void UserMapping()
         {

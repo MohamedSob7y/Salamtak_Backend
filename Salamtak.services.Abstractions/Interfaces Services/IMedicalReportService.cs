@@ -10,12 +10,19 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 {
     public interface IMedicalReportService
     {
-        Task<ApiResponse<MedicalReportDto>> GetPatientReportAsync(Guid patientId);
+        Task<ApiResponse<MedicalReportDto>> GetMyReportAsync(
+          Guid patientUserId);
 
-        Task<ApiResponse<MedicalReportDto>> GetPatientReportForDoctorAsync(Guid doctorId, Guid patientId, Guid appointmentId);
+        Task<ApiResponse<MedicalReportDto>> GetPatientReportForDoctorAsync(
+            Guid doctorUserId,
+            Guid appointmentId);
 
-        Task<ApiResponse<MedicalReportEntryDto>> AddEntryAsync(Guid doctorId, CreateMedicalReportEntryDto dto);
+        Task<ApiResponse<MedicalReportEntryDto>> AddEntryAsync(
+            Guid doctorUserId,
+            CreateMedicalReportEntryDto dto);
 
-        Task<ApiResponse<MedicalReportEntryDto>> UpdateEntryAsync(Guid doctorId, UpdateMedicalReportEntryDto dto);
+        Task<ApiResponse<MedicalReportEntryDto>> UpdateEntryAsync(
+            Guid doctorUserId,
+            UpdateMedicalReportEntryDto dto);
     }
 }

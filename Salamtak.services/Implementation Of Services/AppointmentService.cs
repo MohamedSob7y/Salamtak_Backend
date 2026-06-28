@@ -643,8 +643,7 @@ namespace Salamtak.services.Implementation_Of_Services
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .FirstOrDefaultAsync(d =>
-                    d.UserId == doctorUserId);
+                .FirstOrDefaultAsync(d => d.UserId == doctorUserId);
 
             if (doctor is null)
             {
@@ -654,8 +653,7 @@ namespace Salamtak.services.Implementation_Of_Services
 
             var appointments = await _unitOfWork
                 .Repository<Appointment>()
-                .GetAllAsync(a =>
-                    a.DoctorId == doctor.Id);
+                .GetAllAsync(a => a.DoctorId == doctor.Id);
 
             foreach (var appointment in appointments)
             {
@@ -670,61 +668,54 @@ namespace Salamtak.services.Implementation_Of_Services
 
             var result = _mapper.Map<
                 IReadOnlyList<DoctorAppointmentDto>>(
-                orderedAppointments);
+                    orderedAppointments);
 
             return ApiResponse<
                 IReadOnlyList<DoctorAppointmentDto>>.Ok(
-                result,
-                "Doctor appointments retrieved successfully.");
+                    result,
+                    "Doctor appointments retrieved successfully.");
         }
-        #region Helper Method
-        private async Task LoadAppointmentDataAsync(Appointment appointment)
+
+        #region Helper Methods
+
+        private async Task LoadAppointmentDataAsync(
+            Appointment appointment)
         {
-            appointment.Patient =
-                await _unitOfWork
-                    .Repository<Patient>()
-                    .GetByIdAsync(appointment.PatientId);
+            appointment.Patient = await _unitOfWork
+                .Repository<Patient>()
+                .GetByIdAsync(appointment.PatientId);
 
             if (appointment.Patient is not null)
             {
-                appointment.Patient.User =
-                    await _unitOfWork
-                        .Repository<User>()
-                        .GetByIdAsync(
-                            appointment.Patient.UserId);
+                appointment.Patient.User = await _unitOfWork
+                    .Repository<User>()
+                    .GetByIdAsync(appointment.Patient.UserId);
             }
 
-            appointment.Doctor =
-                await _unitOfWork
-                    .Repository<Doctor>()
-                    .GetByIdAsync(appointment.DoctorId);
+            appointment.Doctor = await _unitOfWork
+                .Repository<Doctor>()
+                .GetByIdAsync(appointment.DoctorId);
 
             if (appointment.Doctor is not null)
             {
-                appointment.Doctor.User =
-                    await _unitOfWork
-                        .Repository<User>()
-                        .GetByIdAsync(
-                            appointment.Doctor.UserId);
+                appointment.Doctor.User = await _unitOfWork
+                    .Repository<User>()
+                    .GetByIdAsync(appointment.Doctor.UserId);
 
-                appointment.Doctor.Specialty =
-                    await _unitOfWork
-                        .Repository<Specialty>()
-                        .GetByIdAsync(
-                            appointment.Doctor.SpecialtyId);
+                appointment.Doctor.Specialty = await _unitOfWork
+                    .Repository<Specialty>()
+                    .GetByIdAsync(appointment.Doctor.SpecialtyId);
             }
 
-            appointment.Clinic =
-                await _unitOfWork
-                    .Repository<Clinic>()
-                    .GetByIdAsync(appointment.ClinicId);
+            appointment.Clinic = await _unitOfWork
+                .Repository<Clinic>()
+                .GetByIdAsync(appointment.ClinicId);
 
-            appointment.AvailabilitySlot =
-                await _unitOfWork
-                    .Repository<AvailabilitySlot>()
-                    .GetByIdAsync(
-                        appointment.AvailabilitySlotId);
-        } 
+            appointment.AvailabilitySlot = await _unitOfWork
+                .Repository<AvailabilitySlot>()
+                .GetByIdAsync(appointment.AvailabilitySlotId);
+        }
+
         #endregion
     }
 }
