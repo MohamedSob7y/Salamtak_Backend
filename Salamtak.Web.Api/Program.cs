@@ -18,6 +18,10 @@ using Salamtak.Web.Api.Hubs_Real_Time;
 using Salamtak.Web.Api.Middlewares;
 using Salamtak.Web.Api.Realtime;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+
+
 namespace Salamtak.Web.Api
 {
     public class Program
@@ -183,7 +187,45 @@ namespace Salamtak.Web.Api
             //============================================
 
             #region Build Application
+            
+            #region Caching + Rate Limiting
 
+            builder.Services.AddMemoryCache();
+
+            builder.Services.AddOutputCache(options =>
+            {
+                options.AddPolicy("PublicShort", policy =>
+                policy.Expire(TimeSpan.FromMinutes(2)));
+            });
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.AddFixedWindowLimiter("General", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 100;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+            });
+
+            options.AddFixedWindowLimiter("Auth", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 10;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+            });
+
+            options.AddFixedWindowLimiter("Booking", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 5;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+            });
+        });
+
+        #endregion
+            
             var app = builder.Build();
 
             #endregion
@@ -206,7 +248,9 @@ namespace Salamtak.Web.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseRateLimiter();
+            app.UseOutputCache();
+            
             app.UseMiddleware<ExceptionMiddleware>();
 
             app.UseHttpsRedirection();
