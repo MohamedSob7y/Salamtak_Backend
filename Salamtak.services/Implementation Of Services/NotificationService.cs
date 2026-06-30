@@ -1,4 +1,5 @@
 using AutoMapper;
+using External_Services.Email;
 using FluentValidation;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
@@ -16,17 +17,20 @@ namespace Salamtak.services.Implementation_Of_Services
         private readonly IMapper _mapper;
         private readonly IValidator<CreateNotificationDto> _createValidator;
         private readonly IValidator<MarkNotificationAsReadDto> _markValidator;
+        private readonly IEmailService _emailService;
 
         public NotificationService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateNotificationDto> createValidator,
-            IValidator<MarkNotificationAsReadDto> markValidator)
+            IValidator<MarkNotificationAsReadDto> markValidator,
+            IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _createValidator = createValidator;
             _markValidator = markValidator;
+            _emailService = emailService;
         }
 
         public async Task<ApiResponse<NotificationDto>> CreateAsync(CreateNotificationDto dto)
@@ -36,11 +40,11 @@ namespace Salamtak.services.Implementation_Of_Services
             if (!validationResult.IsValid)
                 throw new AppValidationException(validationResult.Errors.Select(e => e.ErrorMessage));
 
-            var userExists = await _unitOfWork
+            var user = await _unitOfWork
                 .Repository<User>()
-                .AnyAsync(u => u.Id == dto.UserId);
+                .GetByIdAsync(dto.UserId);
 
-            if (!userExists)
+            if (user is null)
                 throw new NotFoundException("User not found.");
 
             if (!Enum.TryParse<NotificationType>(dto.Type, true, out var type))
@@ -57,12 +61,8 @@ namespace Salamtak.services.Implementation_Of_Services
                 Message = dto.Message.Trim(),
                 Type = type,
                 Channel = channel,
-                Status = channel == NotificationChannel.InApp
-                    ? NotificationStatus.Sent
-                    : NotificationStatus.Pending,
-                SentAt = channel == NotificationChannel.InApp
-                    ? DateTime.UtcNow
-                    : null,
+                Status = NotificationStatus.Sent,
+                SentAt = DateTime.UtcNow,
                 IsRead = false
             };
 
@@ -71,6 +71,22 @@ namespace Salamtak.services.Implementation_Of_Services
                 .AddAsync(notification);
 
             await _unitOfWork.SaveChangesAsync();
+
+            // ابعت Email كمان في نفس الوقت (InApp + Email)
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(user.Email))
+                {
+                    await _emailService.SendEmailAsync(
+                        user.Email,
+                        dto.Title.Trim(),
+                        dto.Message.Trim());
+                }
+            }
+            catch
+            {
+                // لو الإيميل فشل، الـ Notification يفضل متسجل في الـ DB عادي
+            }
 
             var result = _mapper.Map<NotificationDto>(notification);
 

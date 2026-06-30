@@ -86,6 +86,10 @@ namespace Salamtak.Web.Api
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddApplicationServices();
+            builder.Services.Configure<External_Services.Email.EmailOptions>(
+            builder.Configuration.GetSection("EmailOptions"));
+
+            builder.Services.AddScoped<External_Services.Email.IEmailService, External_Services.Email.EmailService>();
 
             #endregion
 
