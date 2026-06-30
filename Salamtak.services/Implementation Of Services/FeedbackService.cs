@@ -124,6 +124,7 @@ namespace Salamtak.services.Implementation_Of_Services
 
         public async Task<ApiResponse<IReadOnlyList<DoctorFeedbackDto>>> GetDoctorFeedbacksAsync(Guid doctorId)
         {
+            // Console.WriteLine("DATABASE HIT: GetDoctorFeedbacksAsync was called");
             var doctorExists = await _unitOfWork
                 .Repository<Doctor>()
                 .AnyAsync(d => d.Id == doctorId);

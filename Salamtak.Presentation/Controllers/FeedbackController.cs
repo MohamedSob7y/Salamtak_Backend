@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.Mvc;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
@@ -53,11 +54,13 @@ namespace Salamtak.Presentation.Controllers
 
         [HttpGet("doctors/{doctorId:guid}")]
         [AllowAnonymous]
+        [OutputCache(Duration = 120)]
         public async Task<IActionResult> GetDoctorFeedbacks(Guid doctorId)
         {
             var response = await _feedbackService.GetDoctorFeedbacksAsync(doctorId);
             return Ok(response);
         }
+
 
         [HttpDelete("{feedbackId:guid}")]
         [Authorize(Roles = "Patient")]

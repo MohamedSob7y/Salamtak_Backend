@@ -1,26 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Salamtak.Domain.Contracts;
-using Salamtak.Domain.Interfaces.Repository;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Persistance.Context;
 using Salamtak.Persistance.DataSeeding;
-using Salamtak.Persistance.Implementation.Repository;
 using Salamtak.Persistance.Implementation.Unite_Of_Work;
 using Salamtak.services;
 using Salamtak.services.Abstractions.Interfaces_Services;
-using Salamtak.services.Mapping;
 using Salamtak.Web.Api.Extentions;
 using Salamtak.Web.Api.Hubs_Real_Time;
 using Salamtak.Web.Api.Middlewares;
 using Salamtak.Web.Api.Realtime;
 using System.Text;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
-
 
 namespace Salamtak.Web.Api
 {
@@ -186,8 +180,6 @@ namespace Salamtak.Web.Api
 
             //============================================
 
-            #region Build Application
-            
             #region Caching + Rate Limiting
 
             builder.Services.AddMemoryCache();
@@ -195,37 +187,43 @@ namespace Salamtak.Web.Api
             builder.Services.AddOutputCache(options =>
             {
                 options.AddPolicy("PublicShort", policy =>
-                policy.Expire(TimeSpan.FromMinutes(2)));
+                    policy
+                        .Cache()
+                        .Expire(TimeSpan.FromMinutes(2)));
             });
 
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            options.AddFixedWindowLimiter("General", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = 100;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.QueueLimit = 0;
+                options.AddFixedWindowLimiter("General", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 100;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueLimit = 0;
+                });
+
+                options.AddFixedWindowLimiter("Auth", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 10;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueLimit = 0;
+                });
+
+                options.AddFixedWindowLimiter("Booking", limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 5;
+                    limiterOptions.Window = TimeSpan.FromMinutes(1);
+                    limiterOptions.QueueLimit = 0;
+                });
             });
 
-            options.AddFixedWindowLimiter("Auth", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = 10;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.QueueLimit = 0;
-            });
+            #endregion
 
-            options.AddFixedWindowLimiter("Booking", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = 5;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.QueueLimit = 0;
-            });
-        });
+            //============================================
 
-        #endregion
-            
+            #region Build Application
+
             var app = builder.Build();
 
             #endregion
@@ -234,8 +232,8 @@ namespace Salamtak.Web.Api
 
             #region Database Migration + Seeding
 
-            await app.MigrateDatabaseAsync();//Call Extention Method
-            await app.SeedDataAsync();//Call ExtentionMethods
+            await app.MigrateDatabaseAsync();
+            await app.SeedDataAsync();
 
             #endregion
 
@@ -248,16 +246,18 @@ namespace Salamtak.Web.Api
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.UseRateLimiter();
-            app.UseOutputCache();
-            
+
             app.UseMiddleware<ExceptionMiddleware>();
 
-            app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
 
             app.UseCors("AllowFrontend");
 
+            app.UseOutputCache();
+
             app.UseAuthentication();
+
+            app.UseRateLimiter();
 
             app.UseAuthorization();
 
