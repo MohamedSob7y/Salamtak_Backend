@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Salamtak.Domain\Salamtak.Domain.csproj" />
     <ProjectReference Include="..\Salamtak.services.Abstractions\Salamtak.services.Abstractions.csproj" />
+    <ProjectReference Include="..\External Services\Salamtak.ExternalServices.csproj" />
   </ItemGroup>
 
   <ItemGroup>
