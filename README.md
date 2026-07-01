@@ -1,12 +1,8 @@
-1: https://chatgpt.com/share/6a444c49-0098-83ea-8a0b-09c6de5098ea
-2: https://chatgpt.com/share/6a444c59-16f8-83ea-9f70-c4748b9827de 
+https://chatgpt.com/share/6a458bff-8d48-83ea-aa41-4fb07197ba3e
+https://chatgpt.com/share/6a458c5a-f0c8-83ea-9e0e-91e3eb7b2dfb
 
 
-1: Clinic Controller 
-2: Patient Controller
-3: Cashing + RateLimitation With 
-4: FeedbackController
-5:Seeding Data
-6: Speciality Controller 
-7: Paymnent 
+1:Seeding Data
+2: Paymnent https://chatgpt.com/share/6a458c6e-06e8-83ea-8727-e4f26956fc0e
+3: clinic
 8: ربط الFront with Back 
