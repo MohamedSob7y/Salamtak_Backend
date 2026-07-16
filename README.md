@@ -1,5 +1,7 @@
-https://chatgpt.com/share/6a554b70-fb08-83ea-a2f1-c06f47ebc729
+1: https://chatgpt.com/share/6a593650-5a50-83ea-896b-8d77e7b8b6a9
 https://chatgpt.com/share/6a458c5a-f0c8-83ea-9e0e-91e3eb7b2dfb
 
-Explain Backend With details    https://chatgpt.com/share/6a46f1ef-9484-83ea-a855-b7c4346ecd73
+2: Explain Backend With details   https://chatgpt.com/share/6a592e7f-09a4-83ea-8926-84f2587fbb98
+3: Frontend        https://chatgpt.com/share/6a593032-5ca0-83ea-92c1-36a1ff91f687
+
 
