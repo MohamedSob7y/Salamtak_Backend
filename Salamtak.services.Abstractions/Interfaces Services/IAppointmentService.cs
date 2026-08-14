@@ -19,5 +19,6 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
         Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>GetPatientAppointmentsAsync(Guid patientUserId);
 
         Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId);
+        Task<int> CancelExpiredPendingAppointmentsAsync();
     }
 }

@@ -13,6 +13,7 @@ using Salamtak.Persistance.Implementation.Repository;
 using Salamtak.Persistance.Implementation.Unite_Of_Work;
 using Salamtak.services;
 using Salamtak.services.Abstractions.Interfaces_Services;
+using Salamtak.services.BackgroundServices;
 using Salamtak.services.Implementation_Of_Services;
 using Salamtak.services.Mapping;
 using Salamtak.services.Payments;
@@ -103,6 +104,7 @@ namespace Salamtak.Web.Api
         client.BaseAddress =
             new Uri(options.BaseUrl);
     });
+            builder.Services.AddHostedService<ExpiredAppointmentsBackgroundService>();
             #endregion
 
             //============================================

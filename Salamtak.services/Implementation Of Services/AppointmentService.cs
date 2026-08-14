@@ -51,11 +51,61 @@ namespace Salamtak.services.Implementation_Of_Services
             _notificationService = notificationService;
             _logger = logger;
         }
+        public async Task<int> CancelExpiredPendingAppointmentsAsync()
+        {
+            var now = DateTime.UtcNow;
 
-        public async Task<ApiResponse<AppointmentDto>>
-            BookAppointmentAsync(
-                Guid patientUserId,
-                BookAppointmentDto dto)
+            var pendingAppointments = await _unitOfWork
+                .Repository<Appointment>()
+                .GetAllAsync(appointment =>
+                    appointment.Status == AppointmentStatus.Pending);
+
+            var cancelledCount = 0;
+
+            foreach (var appointment in pendingAppointments)
+            {
+                var slot = await _unitOfWork
+                    .Repository<AvailabilitySlot>()
+                    .GetByIdAsync(
+                        appointment.AvailabilitySlotId);
+
+                if (slot is null)
+                {
+                    continue;
+                }
+
+                if (slot.EndTime >= now)
+                {
+                    continue;
+                }
+
+                appointment.Status =
+                    AppointmentStatus.Cancelled;
+
+                appointment.CancelReason =
+                    "Appointment expired before doctor confirmation.";
+
+                slot.IsAvailable = false;
+
+                _unitOfWork
+                    .Repository<Appointment>()
+                    .Update(appointment);
+
+                _unitOfWork
+                    .Repository<AvailabilitySlot>()
+                    .Update(slot);
+
+                cancelledCount++;
+            }
+
+            if (cancelledCount > 0)
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            return cancelledCount;
+        }
+        public async Task<ApiResponse<AppointmentDto>>BookAppointmentAsync(Guid patientUserId,BookAppointmentDto dto)
         {
             var validationResult =
                 await _bookValidator.ValidateAsync(dto);
@@ -274,10 +324,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 "Appointment booked successfully and is awaiting doctor confirmation.");
         }
 
-        public async Task<ApiResponse>
-            ConfirmAppointmentAsync(
-                Guid doctorUserId,
-                Guid appointmentId)
+        public async Task<ApiResponse>ConfirmAppointmentAsync(Guid doctorUserId,Guid appointmentId)
         {
             if (appointmentId == Guid.Empty)
             {
@@ -362,10 +409,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 "Appointment confirmed successfully.");
         }
 
-        public async Task<ApiResponse>
-            CancelAppointmentAsync(
-                Guid currentUserId,
-                CancelAppointmentDto dto)
+        public async Task<ApiResponse>CancelAppointmentAsync(Guid currentUserId,CancelAppointmentDto dto)
         {
             var validationResult =
                 await _cancelValidator.ValidateAsync(dto);
@@ -675,10 +719,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 "Appointment completed successfully.");
         }
 
-        public async Task<ApiResponse>
-            MarkAsNoShowAsync(
-                Guid doctorUserId,
-                Guid appointmentId)
+        public async Task<ApiResponse>MarkAsNoShowAsync(Guid doctorUserId,Guid appointmentId)
         {
             if (appointmentId == Guid.Empty)
             {
@@ -774,11 +815,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 "Appointment marked as no-show successfully.");
         }
 
-        public async Task<
-            ApiResponse<AppointmentDetailsDto>>
-            GetByIdAsync(
-                Guid currentUserId,
-                Guid appointmentId)
+        public async Task<ApiResponse<AppointmentDetailsDto>>GetByIdAsync(Guid currentUserId,Guid appointmentId)
         {
             var appointment = await _unitOfWork
                 .Repository<Appointment>()
@@ -806,11 +843,7 @@ namespace Salamtak.services.Implementation_Of_Services
                     result);
         }
 
-        public async Task<
-            ApiResponse<
-                IReadOnlyList<PatientAppointmentDto>>>
-            GetPatientAppointmentsAsync(
-                Guid patientUserId)
+        public async Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>GetPatientAppointmentsAsync(Guid patientUserId)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -895,11 +928,7 @@ namespace Salamtak.services.Implementation_Of_Services
                         result);
         }
 
-        public async Task<
-            ApiResponse<
-                IReadOnlyList<DoctorAppointmentDto>>>
-            GetDoctorAppointmentsAsync(
-                Guid doctorUserId)
+        public async Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId)
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
@@ -976,10 +1005,7 @@ namespace Salamtak.services.Implementation_Of_Services
                         result);
         }
 
-        private async Task
-            EnsureAppointmentAccessAsync(
-                Guid currentUserId,
-                Appointment appointment)
+        private async Task EnsureAppointmentAccessAsync(Guid currentUserId,Appointment appointment)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1011,9 +1037,7 @@ namespace Salamtak.services.Implementation_Of_Services
             }
         }
 
-        private async Task
-            LoadAppointmentNavigationDataAsync(
-                Appointment appointment)
+        private async Task LoadAppointmentNavigationDataAsync(Appointment appointment)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1087,11 +1111,7 @@ namespace Salamtak.services.Implementation_Of_Services
             }
         }
 
-        private async Task
-            SendBookedNotificationsAsync(
-                Appointment appointment,
-                Patient patient,
-                Doctor doctor)
+        private async Task SendBookedNotificationsAsync(Appointment appointment,Patient patient,Doctor doctor)
         {
             await _notificationService.CreateAsync(
                 new CreateNotificationDto
@@ -1140,9 +1160,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 });
         }
 
-        private async Task
-            SendConfirmedNotificationAsync(
-                Appointment appointment)
+        private async Task SendConfirmedNotificationAsync(Appointment appointment)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1178,10 +1196,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 });
         }
 
-        private async Task
-            SendCancelledNotificationsAsync(
-                Appointment appointment,
-                bool cancelledByDoctor)
+        private async Task SendCancelledNotificationsAsync(Appointment appointment,bool cancelledByDoctor)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1250,9 +1265,7 @@ namespace Salamtak.services.Implementation_Of_Services
             }
         }
 
-        private async Task
-            SendCompletedNotificationAsync(
-                Appointment appointment)
+        private async Task SendCompletedNotificationAsync(Appointment appointment)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1288,9 +1301,7 @@ namespace Salamtak.services.Implementation_Of_Services
                 });
         }
 
-        private async Task
-            SendNoShowNotificationAsync(
-                Appointment appointment)
+        private async Task SendNoShowNotificationAsync(Appointment appointment)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
@@ -1326,15 +1337,8 @@ namespace Salamtak.services.Implementation_Of_Services
                 });
         }
 
-        /*
-         * لو حدث خطأ في Notification بعد حفظ العملية،
-         * لا نرجع Error للـFrontend وكأن الحجز نفسه فشل.
-         */
-        private async Task
-            TrySendNotificationsAsync(
-                Func<Task> notificationAction,
-                Guid appointmentId,
-                string operationName)
+       
+        private async Task TrySendNotificationsAsync(Func<Task> notificationAction,Guid appointmentId,string operationName)
         {
             try
             {
