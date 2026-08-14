@@ -1,0 +1,82 @@
+[
+  {
+    "Id": "D3BF8DB1-B49D-5622-B820-B167DFE8E67A",
+    "Name": "Cardiology",
+    "Description": "Heart and blood vessel specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "E2FAD488-5FBB-5A16-8290-AE71312D0657",
+    "Name": "Dermatology",
+    "Description": "Skin, hair, and nail specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "FCB79861-3977-5EDA-8107-3E7B8382A6B5",
+    "Name": "Neurology",
+    "Description": "Brain and nervous system specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "375DA17B-5288-54A5-AE07-358784543E60",
+    "Name": "Orthopedics",
+    "Description": "Bones, joints, and muscles specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "67C2740A-0BB0-5762-8A33-FF35BCAAE40E",
+    "Name": "Pediatrics",
+    "Description": "Children healthcare specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "BC3610CA-3197-5E93-AE94-6C1FCE95E231",
+    "Name": "Psychiatry",
+    "Description": "Mental health specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "7B1AB865-A7A5-5B54-9A87-C8658408689F",
+    "Name": "ENT",
+    "Description": "Ear, nose, and throat specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "6C4CD8AB-BE8C-5EA6-AD86-5C119B2EB568",
+    "Name": "Ophthalmology",
+    "Description": "Eye specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "C0C70BE0-FFDA-5A9C-B811-2D8048C3BD8B",
+    "Name": "Dentistry",
+    "Description": "Oral and dental care specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "ECC1FDC9-E4C6-51F9-86EE-C643DAC27237",
+    "Name": "Internal Medicine",
+    "Description": "Adult general medicine specialist",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  }
+]

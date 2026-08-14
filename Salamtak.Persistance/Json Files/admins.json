@@ -1,0 +1,18 @@
+[
+  {
+    "Id": "93989CEE-CB4B-5A63-B89B-A37CBA01C772",
+    "UserId": "8717897D-0892-5CC1-BF47-0AA88EF5E4F0",
+    "Department": "Testing",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  },
+  {
+    "Id": "8D25BC3D-3472-5144-B180-8AB2D9294F59",
+    "UserId": "7372A3E3-6366-5962-B08F-5AEE96EE47D2",
+    "Department": "Testing",
+    "CreatedAt": "2026-07-02T10:00:00.0000000Z",
+    "UpdatedAt": null,
+    "IsDeleted": false
+  }
+]
