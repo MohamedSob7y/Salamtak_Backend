@@ -171,7 +171,7 @@ namespace Salamtak.services.Implementation_Of_Services
             var slot = await _unitOfWork
                 .Repository<AvailabilitySlot>()
                 .GetByIdAsync(dto.AvailabilitySlotId);
-
+            
             if (slot is null)
             {
                 throw new NotFoundException(
