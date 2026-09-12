@@ -1,10 +1,10 @@
-1:https://chatgpt.com/share/6a7f8c4b-0184-83ea-8582-5feaa7265f73
+1:https://chatgpt.com/share/6aa57fbb-7c6c-83ea-a18f-33ddd3e5b08f
 
 https://chatgpt.com/share/6a5bc383-249c-83ea-9c27-c21d788925ae
 
 2: Explain Backend With details   https://chatgpt.com/share/6a592e7f-09a4-83ea-8926-84f2587fbb98
 
-3: Frontend        https://chatgpt.com/share/6a668cc5-8db0-83ea-9ab8-39e480dcad56      |  https://claude.ai/share/e0b9bf62-de9c-4918-abba-3db8cd4a8856     For Claud  
+3: Frontend        https://chatgpt.com/share/6a668cc5-8db0-83ea-9ab8-39e480dcad56      | https://claude.ai/share/e0b9bf62-de9c-4918-abba-3db8cd4a8856     For Claud  
 
 
 this Script Write in Claud after Send Json Data To This Chat
