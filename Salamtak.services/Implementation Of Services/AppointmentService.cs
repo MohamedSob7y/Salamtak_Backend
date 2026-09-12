@@ -1130,10 +1130,7 @@ namespace Salamtak.services.Implementation_Of_Services
                             .AppointmentBooked
                             .ToString(),
 
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                    
                 });
 
             await _notificationService.CreateAsync(
@@ -1153,10 +1150,7 @@ namespace Salamtak.services.Implementation_Of_Services
                             .AppointmentBooked
                             .ToString(),
 
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                   
                 });
         }
 
@@ -1189,10 +1183,7 @@ namespace Salamtak.services.Implementation_Of_Services
                             .AppointmentConfirmed
                             .ToString(),
 
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                   
                 });
         }
 
@@ -1229,10 +1220,7 @@ namespace Salamtak.services.Implementation_Of_Services
                                 .AppointmentCancelled
                                 .ToString(),
 
-                        Channel =
-                            NotificationChannel
-                                .InAppAndEmail
-                                .ToString()
+                        
                     });
             }
 
@@ -1257,10 +1245,7 @@ namespace Salamtak.services.Implementation_Of_Services
                                 .AppointmentCancelled
                                 .ToString(),
 
-                        Channel =
-                            NotificationChannel
-                                .InAppAndEmail
-                                .ToString()
+                        
                     });
             }
         }
@@ -1294,10 +1279,7 @@ namespace Salamtak.services.Implementation_Of_Services
                             .AppointmentCompleted
                             .ToString(),
 
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                    
                 });
         }
 
@@ -1330,10 +1312,7 @@ namespace Salamtak.services.Implementation_Of_Services
                             .AppointmentNoShow
                             .ToString(),
 
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                    
                 });
         }
 

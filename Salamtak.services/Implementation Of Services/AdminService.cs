@@ -555,10 +555,7 @@ namespace Salamtak.services.Implementation_Of_Services
                         "Your doctor profile has been approved successfully. You can now use the doctor features in Salamtak.",
                     Type =
                         NotificationType.General.ToString(),
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                    
                 });
 
             return ApiResponse.Ok(
@@ -662,10 +659,7 @@ namespace Salamtak.services.Implementation_Of_Services
                         $"Your doctor profile has been rejected. Reason: {rejectionReason}",
                     Type =
                         NotificationType.General.ToString(),
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                   
                 });
 
             return ApiResponse.Ok(
@@ -785,10 +779,7 @@ namespace Salamtak.services.Implementation_Of_Services
                     Message = notificationMessage,
                     Type =
                         NotificationType.General.ToString(),
-                    Channel =
-                        NotificationChannel
-                            .InAppAndEmail
-                            .ToString()
+                    
                 });
 
             return ApiResponse.Ok(

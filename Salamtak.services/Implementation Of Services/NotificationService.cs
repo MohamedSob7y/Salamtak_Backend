@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using External_Services.Email;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -44,12 +44,15 @@ namespace Salamtak.services.Implementation_Of_Services
             _createValidator = createValidator;
             _markValidator = markValidator;
             _emailService = emailService;
+
             _realtimeNotificationService =
                 realtimeNotificationService;
+
             _logger = logger;
         }
 
-        public async Task<ApiResponse<NotificationDto>> CreateAsync(CreateNotificationDto dto)
+        public async Task<ApiResponse<NotificationDto>>
+            CreateAsync(CreateNotificationDto dto)
         {
             var validationResult =
                 await _createValidator.ValidateAsync(dto);
@@ -67,16 +70,18 @@ namespace Salamtak.services.Implementation_Of_Services
 
             if (user is null)
             {
-                throw new NotFoundException("User not found.");
+                throw new NotFoundException(
+                    "User not found.");
             }
 
             if (dto.AppointmentId.HasValue)
             {
-                var appointmentExists = await _unitOfWork
-                    .Repository<Appointment>()
-                    .AnyAsync(appointment =>
-                        appointment.Id ==
-                        dto.AppointmentId.Value);
+                var appointmentExists =
+                    await _unitOfWork
+                        .Repository<Appointment>()
+                        .AnyAsync(appointment =>
+                            appointment.Id ==
+                            dto.AppointmentId.Value);
 
                 if (!appointmentExists)
                 {
@@ -94,106 +99,132 @@ namespace Salamtak.services.Implementation_Of_Services
                     "Invalid notification type.");
             }
 
-            if (!Enum.TryParse<NotificationChannel>(
-                    dto.Channel,
-                    true,
-                    out var channel))
-            {
-                throw new BadRequestException(
-                    "Invalid notification channel.");
-            }
+            /*
+             * كل Notification في المشروع
+             * لازم تتبعت:
+             *
+             * 1- In App باستخدام SignalR
+             * 2- Email
+             */
+            var channel =
+                NotificationChannel.InAppAndEmail;
 
-            var notification = new Notification
-            {
-                UserId = user.Id,
-                AppointmentId = dto.AppointmentId,
-                Title = dto.Title.Trim(),
-                Message = dto.Message.Trim(),
-                Type = type,
-                Channel = channel,
-                Status = NotificationStatus.Pending,
-                IsRead = false,
-                SentAt = null
-            };
+            var notification =
+                new Notification
+                {
+                    UserId = user.Id,
 
+                    AppointmentId =
+                        dto.AppointmentId,
+
+                    Title =
+                        dto.Title.Trim(),
+
+                    Message =
+                        dto.Message.Trim(),
+
+                    Type = type,
+
+                    Channel = channel,
+
+                    Status =
+                        NotificationStatus.Pending,
+
+                    IsRead = false,
+
+                    SentAt = null
+                };
+
+            /*
+             * نحفظ Notification في Database الأول.
+             */
             await _unitOfWork
                 .Repository<Notification>()
                 .AddAsync(notification);
 
             await _unitOfWork.SaveChangesAsync();
 
-            var deliveryFailed = false;
+            var inAppSucceeded = false;
+            var emailSucceeded = false;
 
-            var sendInApp =
-                channel == NotificationChannel.InApp ||
-                channel == NotificationChannel.InAppAndEmail;
-
-            var sendEmail =
-                channel == NotificationChannel.Email ||
-                channel == NotificationChannel.InAppAndEmail;
-
-            if (sendInApp)
+            /*
+             * ==============================
+             * SignalR / In-App Notification
+             * ==============================
+             */
+            try
             {
-                try
-                {
-                    var realtimeDto =
-                        _mapper.Map<RealtimeNotificationDto>(
-                            notification);
+                var realtimeDto =
+                    _mapper.Map<RealtimeNotificationDto>(
+                        notification);
 
-                    await _realtimeNotificationService
-                        .SendToUserAsync(
-                            user.Id,
-                            realtimeDto);
-                }
-                catch (Exception exception)
-                {
-                    deliveryFailed = true;
+                await _realtimeNotificationService
+                    .SendToUserAsync(
+                        user.Id,
+                        realtimeDto);
 
-                    _logger.LogError(
-                        exception,
-                        "SignalR notification failed for user {UserId}.",
-                        user.Id);
-                }
+                inAppSucceeded = true;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "SignalR notification failed for user {UserId}.",
+                    user.Id);
             }
 
-            if (sendEmail)
+            /*
+             * ==============================
+             * Email Notification
+             * ==============================
+             */
+            try
             {
-                try
+                if (string.IsNullOrWhiteSpace(
+                        user.Email))
                 {
-                    if (string.IsNullOrWhiteSpace(user.Email))
-                    {
-                        deliveryFailed = true;
-
-                        _logger.LogWarning(
-                            "Email could not be sent because user {UserId} has no email.",
-                            user.Id);
-                    }
-                    else
-                    {
-                        await _emailService.SendEmailAsync(
+                    _logger.LogWarning(
+                        "Email notification could not be sent because user {UserId} has no email.",
+                        user.Id);
+                }
+                else
+                {
+                    await _emailService
+                        .SendEmailAsync(
                             user.Email,
                             notification.Title,
                             notification.Message);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    deliveryFailed = true;
 
-                    _logger.LogError(
-                        exception,
-                        "Email notification failed for user {UserId}.",
-                        user.Id);
+                    emailSucceeded = true;
                 }
             }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Email notification failed for user {UserId}.",
+                    user.Id);
+            }
 
-            notification.Status = deliveryFailed
-                ? NotificationStatus.Failed
-                : NotificationStatus.Sent;
+            /*
+             * الـNotification تعتبر Sent
+             * لو قناة واحدة على الأقل نجحت.
+             *
+             * لو الاتنين فشلوا تبقى Failed.
+             */
+            var anyDeliverySucceeded =
+                inAppSucceeded ||
+                emailSucceeded;
 
-            notification.SentAt = deliveryFailed
-                ? null
-                : DateTime.UtcNow;
+            notification.Status =
+                anyDeliverySucceeded
+                    ? NotificationStatus.Sent
+                    : NotificationStatus.Failed;
+
+            notification.SentAt =
+                anyDeliverySucceeded
+                    ? DateTime.UtcNow
+                    : null;
 
             _unitOfWork
                 .Repository<Notification>()
@@ -201,18 +232,45 @@ namespace Salamtak.services.Implementation_Of_Services
 
             await _unitOfWork.SaveChangesAsync();
 
-            var result = MapNotification(notification, user);
+            var result =
+                MapNotification(
+                    notification,
+                    user);
 
-            var message = deliveryFailed
-                ? "Notification was saved, but one or more delivery channels failed."
-                : "Notification created and delivered successfully.";
+            string message;
+
+            if (inAppSucceeded &&
+                emailSucceeded)
+            {
+                message =
+                    "Notification was delivered successfully in-app and by email.";
+            }
+            else if (inAppSucceeded)
+            {
+                message =
+                    "Notification was delivered in-app, but email delivery failed.";
+            }
+            else if (emailSucceeded)
+            {
+                message =
+                    "Notification was delivered by email, but real-time in-app delivery failed.";
+            }
+            else
+            {
+                message =
+                    "Notification was saved, but all delivery channels failed.";
+            }
 
             return ApiResponse<NotificationDto>.Ok(
                 result,
                 message);
         }
 
-        public async Task<ApiResponse<IReadOnlyList<NotificationDto>>>GetUserNotificationsAsync(Guid userId)
+        public async Task<
+            ApiResponse<
+                IReadOnlyList<NotificationDto>>>
+            GetUserNotificationsAsync(
+                Guid userId)
         {
             var user = await _unitOfWork
                 .Repository<User>()
@@ -220,88 +278,113 @@ namespace Salamtak.services.Implementation_Of_Services
 
             if (user is null)
             {
-                throw new NotFoundException("User not found.");
+                throw new NotFoundException(
+                    "User not found.");
             }
 
-            var notifications = await _unitOfWork
-                .Repository<Notification>()
-                .GetAllAsync(notification =>
-                    notification.UserId == userId &&
-                    !notification.IsDeleted);
+            var notifications =
+                await _unitOfWork
+                    .Repository<Notification>()
+                    .GetAllAsync(notification =>
+                        notification.UserId ==
+                        userId &&
+                        !notification.IsDeleted);
 
             var result = notifications
-                .OrderByDescending(notification =>
-                    notification.CreatedAt)
+                .OrderByDescending(
+                    notification =>
+                        notification.CreatedAt)
                 .Select(notification =>
-                    MapNotification(notification, user))
+                    MapNotification(
+                        notification,
+                        user))
                 .ToList();
 
             return ApiResponse<
-                IReadOnlyList<NotificationDto>>.Ok(
-                    result,
-                    "User notifications retrieved successfully.");
+                IReadOnlyList<
+                    NotificationDto>>.Ok(
+                        result,
+                        "User notifications retrieved successfully.");
         }
 
-        public async Task<ApiResponse<IReadOnlyList<NotificationDto>>>GetAllNotificationsAsync()
+        public async Task<
+            ApiResponse<
+                IReadOnlyList<NotificationDto>>>
+            GetAllNotificationsAsync()
         {
-            var notifications = await _unitOfWork
-                .Repository<Notification>()
-                .GetAllAsync(notification =>
-                    !notification.IsDeleted);
+            var notifications =
+                await _unitOfWork
+                    .Repository<Notification>()
+                    .GetAllAsync(notification =>
+                        !notification.IsDeleted);
 
-            var orderedNotifications = notifications
-                .OrderByDescending(notification =>
-                    notification.CreatedAt)
-                .ToList();
+            var orderedNotifications =
+                notifications
+                    .OrderByDescending(
+                        notification =>
+                            notification.CreatedAt)
+                    .ToList();
 
-            var userIds = orderedNotifications
-                .Select(notification => notification.UserId)
-                .Distinct()
-                .ToList();
+            var userIds =
+                orderedNotifications
+                    .Select(notification =>
+                        notification.UserId)
+                    .Distinct()
+                    .ToList();
 
             var users = await _unitOfWork
                 .Repository<User>()
                 .GetAllAsync(user =>
                     userIds.Contains(user.Id));
 
-            var userLookup = users.ToDictionary(
-                user => user.Id,
-                user => user);
+            var userLookup =
+                users.ToDictionary(
+                    user => user.Id,
+                    user => user);
 
-            var result = orderedNotifications
-                .Select(notification =>
-                {
-                    userLookup.TryGetValue(
-                        notification.UserId,
-                        out var user);
+            var result =
+                orderedNotifications
+                    .Select(notification =>
+                    {
+                        userLookup.TryGetValue(
+                            notification.UserId,
+                            out var user);
 
-                    return MapNotification(
-                        notification,
-                        user);
-                })
-                .ToList();
+                        return MapNotification(
+                            notification,
+                            user);
+                    })
+                    .ToList();
 
             return ApiResponse<
-                IReadOnlyList<NotificationDto>>.Ok(
-                    result,
-                    "All notifications retrieved successfully.");
+                IReadOnlyList<
+                    NotificationDto>>.Ok(
+                        result,
+                        "All notifications retrieved successfully.");
         }
 
-        public async Task<ApiResponse> MarkAsReadAsync(Guid userId,MarkNotificationAsReadDto dto)
+        public async Task<ApiResponse>
+            MarkAsReadAsync(
+                Guid userId,
+                MarkNotificationAsReadDto dto)
         {
             var validationResult =
-                await _markValidator.ValidateAsync(dto);
+                await _markValidator
+                    .ValidateAsync(dto);
 
             if (!validationResult.IsValid)
             {
                 throw new AppValidationException(
                     validationResult.Errors.Select(
-                        error => error.ErrorMessage));
+                        error =>
+                            error.ErrorMessage));
             }
 
-            var notification = await _unitOfWork
-                .Repository<Notification>()
-                .GetByIdAsync(dto.NotificationId);
+            var notification =
+                await _unitOfWork
+                    .Repository<Notification>()
+                    .GetByIdAsync(
+                        dto.NotificationId);
 
             if (notification is null ||
                 notification.IsDeleted)
@@ -310,7 +393,8 @@ namespace Salamtak.services.Implementation_Of_Services
                     "Notification not found.");
             }
 
-            if (notification.UserId != userId)
+            if (notification.UserId !=
+                userId)
             {
                 throw new ForbiddenException(
                     "You are not allowed to update this notification.");
@@ -328,58 +412,79 @@ namespace Salamtak.services.Implementation_Of_Services
                 .Repository<Notification>()
                 .Update(notification);
 
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork
+                .SaveChangesAsync();
 
             return ApiResponse.Ok(
                 "Notification marked as read.");
         }
 
-        public async Task<ApiResponse> MarkAllAsReadAsync(Guid userId)
+        public async Task<ApiResponse>
+            MarkAllAsReadAsync(
+                Guid userId)
         {
-            var userExists = await _unitOfWork
-                .Repository<User>()
-                .AnyAsync(user => user.Id == userId);
+            var userExists =
+                await _unitOfWork
+                    .Repository<User>()
+                    .AnyAsync(user =>
+                        user.Id ==
+                        userId);
 
             if (!userExists)
             {
-                throw new NotFoundException("User not found.");
+                throw new NotFoundException(
+                    "User not found.");
             }
 
-            var notifications = await _unitOfWork
-                .Repository<Notification>()
-                .GetAllAsync(notification =>
-                    notification.UserId == userId &&
-                    !notification.IsRead &&
-                    !notification.IsDeleted);
+            var notifications =
+                await _unitOfWork
+                    .Repository<Notification>()
+                    .GetAllAsync(
+                        notification =>
+                            notification.UserId ==
+                            userId &&
+                            !notification.IsRead &&
+                            !notification.IsDeleted);
 
-            foreach (var notification in notifications)
+            foreach (
+                var notification
+                in notifications)
             {
-                notification.IsRead = true;
+                notification.IsRead =
+                    true;
 
                 _unitOfWork
                     .Repository<Notification>()
                     .Update(notification);
             }
 
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork
+                .SaveChangesAsync();
 
             return ApiResponse.Ok(
                 "All notifications marked as read.");
         }
 
-        private NotificationDto MapNotification(Notification notification,User? user)
+        private NotificationDto
+            MapNotification(
+                Notification notification,
+                User? user)
         {
             var result =
-                _mapper.Map<NotificationDto>(notification);
+                _mapper.Map<NotificationDto>(
+                    notification);
 
             result.RecipientName =
-                user?.FullName ?? string.Empty;
+                user?.FullName ??
+                string.Empty;
 
             result.RecipientEmail =
-                user?.Email ?? string.Empty;
+                user?.Email ??
+                string.Empty;
 
             result.RecipientRole =
-                user?.Role.ToString() ?? string.Empty;
+                user?.Role.ToString() ??
+                string.Empty;
 
             return result;
         }

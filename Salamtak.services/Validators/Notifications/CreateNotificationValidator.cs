@@ -1,11 +1,6 @@
 ﻿using FluentValidation;
 using Salamtak.Domain.Models.Enums;
 using Salamtak.Shared.DTOs.Notifications;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Salamtak.services.Validators.Notifications
 {
@@ -47,27 +42,6 @@ namespace Salamtak.services.Validators.Notifications
                         true,
                         out _))
                 .WithMessage("Invalid notification type.");
-
-            RuleFor(x => x.Channel)
-                .NotEmpty()
-                .WithMessage("Notification channel is required.")
-                .Must(channel =>
-                {
-                    if (!Enum.TryParse<NotificationChannel>(
-                            channel,
-                            true,
-                            out var parsedChannel))
-                    {
-                        return false;
-                    }
-
-                    return parsedChannel is
-                        NotificationChannel.InApp or
-                        NotificationChannel.Email or
-                        NotificationChannel.InAppAndEmail;
-                })
-                .WithMessage(
-                    "Channel must be InApp, Email, or InAppAndEmail.");
         }
     }
 }
