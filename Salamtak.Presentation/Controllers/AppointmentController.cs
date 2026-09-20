@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.Shared.Constants;
 using Salamtak.Shared.DTOs.Appointments;
+using Salamtak.Shared.Pagination;
 using Salamtak.Web.Api.Controllers;
 
 namespace Salamtak.Presentation.Controllers
@@ -10,19 +11,20 @@ namespace Salamtak.Presentation.Controllers
     [Route("api/appointments")]
     [ApiController]
     [Authorize]
-    public class AppointmentController: BaseApiController
+    public class AppointmentController : BaseApiController
     {
         private readonly IAppointmentService _appointmentService;
 
-        public AppointmentController(IAppointmentService appointmentService)
+        public AppointmentController(
+            IAppointmentService appointmentService)
         {
-            _appointmentService =
-                appointmentService;
+            _appointmentService = appointmentService;
         }
 
         [HttpPost]
         [Authorize(Roles = Roles.Patient)]
-        public async Task<IActionResult>BookAppointment([FromBody]BookAppointmentDto dto)
+        public async Task<IActionResult> BookAppointment(
+            [FromBody] BookAppointmentDto dto)
         {
             var patientUserId =
                 GetCurrentUserId();
@@ -37,8 +39,9 @@ namespace Salamtak.Presentation.Controllers
         }
 
         [HttpPut("cancel")]
-        [Authorize(Roles =Roles.Patient + "," +Roles.Doctor)]
-        public async Task<IActionResult>CancelAppointment([FromBody]CancelAppointmentDto dto)
+        [Authorize(Roles = Roles.Patient + "," + Roles.Doctor)]
+        public async Task<IActionResult> CancelAppointment(
+            [FromBody] CancelAppointmentDto dto)
         {
             var currentUserId =
                 GetCurrentUserId();
@@ -54,7 +57,8 @@ namespace Salamtak.Presentation.Controllers
 
         [HttpPut("complete")]
         [Authorize(Roles = Roles.Doctor)]
-        public async Task<IActionResult>CompleteAppointment([FromBody]CompleteAppointmentDto dto)
+        public async Task<IActionResult> CompleteAppointment(
+            [FromBody] CompleteAppointmentDto dto)
         {
             var doctorUserId =
                 GetCurrentUserId();
@@ -69,8 +73,9 @@ namespace Salamtak.Presentation.Controllers
         }
 
         [HttpGet("{appointmentId:guid}")]
-        [Authorize(Roles =Roles.Patient + "," +Roles.Doctor)]
-        public async Task<IActionResult>GetAppointmentById(Guid appointmentId)
+        [Authorize(Roles = Roles.Patient + "," + Roles.Doctor)]
+        public async Task<IActionResult> GetAppointmentById(
+            Guid appointmentId)
         {
             var currentUserId =
                 GetCurrentUserId();
@@ -86,7 +91,7 @@ namespace Salamtak.Presentation.Controllers
 
         [HttpGet("patient/me")]
         [Authorize(Roles = Roles.Patient)]
-        public async Task<IActionResult>GetMyPatientAppointments()
+        public async Task<IActionResult> GetMyPatientAppointments()
         {
             var patientUserId =
                 GetCurrentUserId();
@@ -101,7 +106,8 @@ namespace Salamtak.Presentation.Controllers
 
         [HttpGet("doctor/me")]
         [Authorize(Roles = Roles.Doctor)]
-        public async Task<IActionResult>GetMyDoctorAppointments()
+        public async Task<IActionResult> GetMyDoctorAppointments(
+            [FromQuery] PaginationParameters pagination)
         {
             var doctorUserId =
                 GetCurrentUserId();
@@ -109,7 +115,8 @@ namespace Salamtak.Presentation.Controllers
             var response =
                 await _appointmentService
                     .GetDoctorAppointmentsAsync(
-                        doctorUserId);
+                        doctorUserId,
+                        pagination);
 
             return Ok(response);
         }
@@ -117,28 +124,33 @@ namespace Salamtak.Presentation.Controllers
         [HttpPut("{appointmentId:guid}/confirm")]
         [Authorize(Roles = Roles.Doctor)]
         public async Task<IActionResult> ConfirmAppointment(
-    Guid appointmentId)
+            Guid appointmentId)
         {
-            var doctorUserId = GetCurrentUserId();
+            var doctorUserId =
+                GetCurrentUserId();
 
-            var response = await _appointmentService
-                .ConfirmAppointmentAsync(
-                    doctorUserId,
-                    appointmentId);
+            var response =
+                await _appointmentService
+                    .ConfirmAppointmentAsync(
+                        doctorUserId,
+                        appointmentId);
 
             return Ok(response);
         }
 
         [HttpPut("{appointmentId:guid}/no-show")]
         [Authorize(Roles = Roles.Doctor)]
-        public async Task<IActionResult> MarkAsNoShow(Guid appointmentId)
+        public async Task<IActionResult> MarkAsNoShow(
+            Guid appointmentId)
         {
-            var doctorUserId = GetCurrentUserId();
+            var doctorUserId =
+                GetCurrentUserId();
 
-            var response = await _appointmentService
-                .MarkAsNoShowAsync(
-                    doctorUserId,
-                    appointmentId);
+            var response =
+                await _appointmentService
+                    .MarkAsNoShowAsync(
+                        doctorUserId,
+                        appointmentId);
 
             return Ok(response);
         }

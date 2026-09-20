@@ -22,8 +22,4 @@
     <ProjectReference Include="..\Salamtak.Presentation\Salamtak.Presentation.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\" />
-  </ItemGroup>
-
 </Project>

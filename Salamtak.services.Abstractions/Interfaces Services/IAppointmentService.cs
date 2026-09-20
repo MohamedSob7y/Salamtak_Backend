@@ -1,4 +1,5 @@
 ﻿using Salamtak.Shared.DTOs.Appointments;
+using Salamtak.Shared.Pagination;
 using Salamtak.Shared.Responses;
 
 namespace Salamtak.services.Abstractions.Interfaces_Services
@@ -18,7 +19,7 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 
         Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>GetPatientAppointmentsAsync(Guid patientUserId);
 
-        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId);
+        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId, PaginationParameters pagination);
         Task<int> CancelExpiredPendingAppointmentsAsync();
     }
 }

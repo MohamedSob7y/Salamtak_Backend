@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Salamtak.Domain.Interfaces.Repository;
 using Salamtak.Domain.Models.Common_Entity;
+using Salamtak.Domain.Specifications;
 using Salamtak.Persistance.Context;
+using Salamtak.Persistance.Specifications;
 using System.Linq.Expressions;
 
 namespace Salamtak.Persistance.Implementation.Repository
@@ -150,6 +152,53 @@ namespace Salamtak.Persistance.Implementation.Repository
                 .Where(predicate)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+
+        public async Task<IReadOnlyList<TEntity>>
+    GetAllWithSpecAsync(
+        ISpecification<TEntity> specification)
+        {
+            var query =
+                SpecificationEvaluator<TEntity>
+                    .GetQuery(
+                        _dbSet.AsQueryable(),
+                        specification);
+
+            return await query
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+
+
+        public async Task<TEntity?>
+    GetEntityWithSpecAsync(
+        ISpecification<TEntity> specification)
+        {
+            var query =
+                SpecificationEvaluator<TEntity>
+                    .GetQuery(
+                        _dbSet.AsQueryable(),
+                        specification);
+
+            return await query
+                .FirstOrDefaultAsync();
+        }
+
+
+
+        public async Task<int>
+    CountAsync(
+        ISpecification<TEntity> specification)
+        {
+            var query =
+                SpecificationEvaluator<TEntity>
+                    .GetQuery(
+                        _dbSet.AsQueryable(),
+                        specification);
+
+            return await query.CountAsync();
         }
     }
 }
