@@ -7,9 +7,7 @@ namespace Salamtak.Domain.Specifications
         : ISpecification<TEntity>
         where TEntity : BaseEntity
     {
-        protected BaseSpecification()
-        {
-        }
+        protected BaseSpecification() { }
 
         protected BaseSpecification(
             Expression<Func<TEntity, bool>> criteria)
@@ -22,37 +20,41 @@ namespace Salamtak.Domain.Specifications
         public List<Expression<Func<TEntity, object>>> Includes { get; }
             = new();
 
-        public Expression<Func<TEntity, object>>? OrderBy { get; private set; }
+        public Expression<Func<TEntity, object>>? OrderBy
+        {
+            get;
+            private set;
+        }
 
-        public Expression<Func<TEntity, object>>? OrderByDescending { get; private set; }
+        public Expression<Func<TEntity, object>>? OrderByDescending
+        {
+            get;
+            private set;
+        }
 
         public int Skip { get; private set; }
-
         public int Take { get; private set; }
-
         public bool IsPagingEnabled { get; private set; }
 
         protected void AddInclude(
-            Expression<Func<TEntity, object>> includeExpression)
+            Expression<Func<TEntity, object>> include)
         {
-            Includes.Add(includeExpression);
+            Includes.Add(include);
         }
 
         protected void AddOrderBy(
-            Expression<Func<TEntity, object>> orderByExpression)
+            Expression<Func<TEntity, object>> expression)
         {
-            OrderBy = orderByExpression;
+            OrderBy = expression;
         }
 
         protected void AddOrderByDescending(
-            Expression<Func<TEntity, object>> orderByDescendingExpression)
+            Expression<Func<TEntity, object>> expression)
         {
-            OrderByDescending = orderByDescendingExpression;
+            OrderByDescending = expression;
         }
 
-        protected void ApplyPaging(
-            int skip,
-            int take)
+        protected void ApplyPaging(int skip, int take)
         {
             Skip = skip;
             Take = take;

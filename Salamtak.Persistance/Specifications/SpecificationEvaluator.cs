@@ -9,40 +9,35 @@ namespace Salamtak.Persistance.Specifications
     {
         public static IQueryable<TEntity> GetQuery(
             IQueryable<TEntity> inputQuery,
-            ISpecification<TEntity> specification)
+            ISpecification<TEntity> specification,
+            bool applyPaging = true)
         {
-            var query = inputQuery;
+            var query = inputQuery
+                .Where(entity => !entity.IsDeleted);
 
-            
-            query = query.Where(entity => !entity.IsDeleted);
-
-            
             if (specification.Criteria is not null)
             {
                 query = query.Where(specification.Criteria);
             }
 
-            
-            query = specification.Includes.Aggregate(
-                query,
-                (current, include) =>
-                    current.Include(include));
+            if (!applyPaging)
+                return query;
 
-           
-            if (specification.OrderBy is not null)
+            foreach (var include in specification.Includes)
             {
-                query = query.OrderBy(
-                    specification.OrderBy);
+                query = query.Include(include);
             }
 
-           
-            if (specification.OrderByDescending is not null)
+            if (specification.OrderBy is not null)
+            {
+                query = query.OrderBy(specification.OrderBy);
+            }
+            else if (specification.OrderByDescending is not null)
             {
                 query = query.OrderByDescending(
                     specification.OrderByDescending);
             }
 
-           
             if (specification.IsPagingEnabled)
             {
                 query = query

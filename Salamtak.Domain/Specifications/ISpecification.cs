@@ -15,9 +15,7 @@ namespace Salamtak.Domain.Specifications
         Expression<Func<TEntity, object>>? OrderByDescending { get; }
 
         int Skip { get; }
-
         int Take { get; }
-
         bool IsPagingEnabled { get; }
     }
 }

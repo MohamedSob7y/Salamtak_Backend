@@ -4,10 +4,12 @@ using Microsoft.Extensions.Logging;
 using Salamtak.Domain.Interfaces.UnitOfWork;
 using Salamtak.Domain.Models;
 using Salamtak.Domain.Models.Enums;
+using Salamtak.Domain.Specifications.Appointments;
 using Salamtak.services.Abstractions.Interfaces_Services;
 using Salamtak.services.Exceptions;
 using Salamtak.Shared.DTOs.Appointments;
 using Salamtak.Shared.DTOs.Notifications;
+using Salamtak.Shared.Pagination;
 using Salamtak.Shared.Responses;
 
 namespace Salamtak.services.Implementation_Of_Services
@@ -843,13 +845,16 @@ namespace Salamtak.services.Implementation_Of_Services
                     result);
         }
 
-        public async Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>GetPatientAppointmentsAsync(Guid patientUserId)
+
+        public async Task<ApiResponse<PaginatedResult<PatientAppointmentDto>>>
+            GetPatientAppointmentsAsync(
+                Guid patientUserId,
+                PaginationParameters pagination)
         {
             var patient = await _unitOfWork
                 .Repository<Patient>()
-                .FirstOrDefaultAsync(patient =>
-                    patient.UserId ==
-                    patientUserId);
+                .FirstOrDefaultAsync(p =>
+                    p.UserId == patientUserId);
 
             if (patient is null)
             {
@@ -857,84 +862,86 @@ namespace Salamtak.services.Implementation_Of_Services
                     "Patient profile not found.");
             }
 
-            var appointments = await _unitOfWork
-                .Repository<Appointment>()
-                .GetAllAsync(appointment =>
-                    appointment.PatientId ==
+            var specification =
+                new PatientAppointmentsSpecification(
+                    patient.Id,
+                    pagination.PageNumber,
+                    pagination.PageSize);
+
+            var countSpecification =
+                new PatientAppointmentsCountSpecification(
                     patient.Id);
 
-            var result =
-                new List<PatientAppointmentDto>();
+            var appointmentRepository =
+                _unitOfWork.Repository<Appointment>();
 
-            foreach (var appointment in appointments
-                         .OrderByDescending(
-                             appointment =>
-                                 appointment.CreatedAt))
+            var appointments = await appointmentRepository
+                .GetAllWithSpecAsync(specification);
+
+            var totalCount = await appointmentRepository
+                .CountAsync(countSpecification);
+
+            var result = new List<PatientAppointmentDto>();
+
+            foreach (var appointment in appointments)
             {
-                var doctor = await _unitOfWork
-                    .Repository<Doctor>()
-                    .GetByIdAsync(
-                        appointment.DoctorId);
+                var doctor = appointment.Doctor;
 
                 var doctorUser =
                     doctor is null
                         ? null
                         : await _unitOfWork
                             .Repository<User>()
-                            .GetByIdAsync(
-                                doctor.UserId);
+                            .GetByIdAsync(doctor.UserId);
 
                 var specialty =
                     doctor is null
                         ? null
                         : await _unitOfWork
                             .Repository<Specialty>()
-                            .GetByIdAsync(
-                                doctor.SpecialtyId);
+                            .GetByIdAsync(doctor.SpecialtyId);
 
-                var slot = await _unitOfWork
-                    .Repository<AvailabilitySlot>()
-                    .GetByIdAsync(
-                        appointment
-                            .AvailabilitySlotId);
+                var slot = appointment.AvailabilitySlot;
 
-                result.Add(
-                    new PatientAppointmentDto
-                    {
-                        AppointmentId =
-                            appointment.Id,
+                result.Add(new PatientAppointmentDto
+                {
+                    AppointmentId = appointment.Id,
 
-                        DoctorName =
-                            doctorUser?.FullName ??
-                            string.Empty,
+                    DoctorName =
+                        doctorUser?.FullName ?? string.Empty,
 
-                        SpecialtyName =
-                            specialty?.Name ??
-                            string.Empty,
+                    SpecialtyName =
+                        specialty?.Name ?? string.Empty,
 
-                        AppointmentDate =
-                            slot?.StartTime ??
-                            appointment.CreatedAt,
+                    AppointmentDate =
+                        slot?.StartTime ?? appointment.CreatedAt,
 
-                        Status =
-                            appointment.Status
-                                .ToString()
-                    });
+                    Status = appointment.Status.ToString()
+                });
             }
 
+            var paginatedResult =
+                new PaginatedResult<PatientAppointmentDto>(
+                    result,
+                    pagination.PageNumber,
+                    pagination.PageSize,
+                    totalCount);
+
             return ApiResponse<
-                IReadOnlyList<
-                    PatientAppointmentDto>>.Ok(
-                        result);
+                PaginatedResult<PatientAppointmentDto>>.Ok(
+                    paginatedResult);
         }
 
-        public async Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId)
+
+        public async Task<ApiResponse<PaginatedResult<DoctorAppointmentDto>>>
+     GetDoctorAppointmentsAsync(
+         Guid doctorUserId,
+         PaginationParameters pagination)
         {
             var doctor = await _unitOfWork
                 .Repository<Doctor>()
-                .FirstOrDefaultAsync(doctor =>
-                    doctor.UserId ==
-                    doctorUserId);
+                .FirstOrDefaultAsync(d =>
+                    d.UserId == doctorUserId);
 
             if (doctor is null)
             {
@@ -942,67 +949,66 @@ namespace Salamtak.services.Implementation_Of_Services
                     "Doctor profile not found.");
             }
 
-            var appointments = await _unitOfWork
-                .Repository<Appointment>()
-                .GetAllAsync(appointment =>
-                    appointment.DoctorId ==
+            var specification =
+                new DoctorAppointmentsSpecification(
+                    doctor.Id,
+                    pagination.PageNumber,
+                    pagination.PageSize);
+
+            var countSpecification =
+                new DoctorAppointmentsCountSpecification(
                     doctor.Id);
 
-            var result =
-                new List<DoctorAppointmentDto>();
+            var repository =
+                _unitOfWork.Repository<Appointment>();
 
-            foreach (var appointment in appointments
-                         .OrderByDescending(
-                             appointment =>
-                                 appointment.CreatedAt))
+            var appointments =
+                await repository.GetAllWithSpecAsync(specification);
+
+            var totalCount =
+                await repository.CountAsync(countSpecification);
+
+            var result = new List<DoctorAppointmentDto>();
+
+            foreach (var appointment in appointments)
             {
-                var patient = await _unitOfWork
-                    .Repository<Patient>()
-                    .GetByIdAsync(
-                        appointment.PatientId);
+                var patient = appointment.Patient;
 
-                var patientUser =
-                    patient is null
-                        ? null
-                        : await _unitOfWork
-                            .Repository<User>()
-                            .GetByIdAsync(
-                                patient.UserId);
+                var patientUser = patient is null
+                    ? null
+                    : await _unitOfWork
+                        .Repository<User>()
+                        .GetByIdAsync(patient.UserId);
 
-                var slot = await _unitOfWork
-                    .Repository<AvailabilitySlot>()
-                    .GetByIdAsync(
-                        appointment
-                            .AvailabilitySlotId);
+                var slot = appointment.AvailabilitySlot;
 
-                result.Add(
-                    new DoctorAppointmentDto
-                    {
-                        AppointmentId =
-                            appointment.Id,
+                result.Add(new DoctorAppointmentDto
+                {
+                    AppointmentId = appointment.Id,
 
-                        PatientName =
-                            patientUser?.FullName ??
-                            string.Empty,
+                    PatientName =
+                        patientUser?.FullName ?? string.Empty,
 
-                        AppointmentDate =
-                            slot?.StartTime ??
-                            appointment.CreatedAt,
+                    AppointmentDate =
+                        slot?.StartTime ?? appointment.CreatedAt,
 
-                        Status =
-                            appointment.Status
-                                .ToString(),
+                    Status = appointment.Status.ToString(),
 
-                        Reason =
-                            appointment.Reason ??
-                            string.Empty
-                    });
+                    Reason = appointment.Reason ?? string.Empty
+                });
             }
 
+            var paginatedResult =
+                new PaginatedResult<DoctorAppointmentDto>(
+                    result,
+                    pagination.PageNumber,
+                    pagination.PageSize,
+                    totalCount);
+
             return ApiResponse<
-                IReadOnlyList<
-                    DoctorAppointmentDto>>.Ok(
-                        result);
+                PaginatedResult<DoctorAppointmentDto>>.Ok(
+                    paginatedResult,
+                    "Doctor appointments retrieved successfully.");
         }
 
         private async Task EnsureAppointmentAccessAsync(Guid currentUserId,Appointment appointment)

@@ -1,5 +1,4 @@
 ﻿using Salamtak.Domain.Models;
-using Salamtak.Domain.Specifications;
 
 namespace Salamtak.Domain.Specifications.Appointments
 {
@@ -10,13 +9,9 @@ namespace Salamtak.Domain.Specifications.Appointments
             Guid doctorId,
             int pageNumber,
             int pageSize)
-            : base(a =>
-                a.DoctorId == doctorId &&
-                !a.IsDeleted)
+            : base(a => a.DoctorId == doctorId)
         {
             AddInclude(a => a.Patient);
-            AddInclude(a => a.Doctor);
-            AddInclude(a => a.Clinic);
             AddInclude(a => a.AvailabilitySlot);
 
             AddOrderByDescending(a => a.CreatedAt);

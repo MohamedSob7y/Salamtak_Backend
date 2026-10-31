@@ -15,15 +15,13 @@ namespace Salamtak.Persistance.Implementation.Repository
         private readonly SalamtakDBContext _context;
         private readonly DbSet<TEntity> _dbSet;
 
-        public GenericRepository(
-            SalamtakDBContext context)
+        public GenericRepository(SalamtakDBContext context)
         {
             _context = context;
-            _dbSet = _context.Set<TEntity>();
+            _dbSet = context.Set<TEntity>();
         }
 
-        public async Task AddAsync(
-            TEntity entity)
+        public async Task AddAsync(TEntity entity)
         {
             await _dbSet.AddAsync(entity);
         }
@@ -34,119 +32,96 @@ namespace Salamtak.Persistance.Implementation.Repository
             await _dbSet.AddRangeAsync(entities);
         }
 
-        public void Update(
-            TEntity entity)
+        public void Update(TEntity entity)
         {
             entity.UpdatedAt = DateTime.UtcNow;
-
             _dbSet.Update(entity);
         }
 
-        public void Delete(
-            TEntity entity)
+        public void Delete(TEntity entity)
         {
             _dbSet.Remove(entity);
         }
 
-        public void SoftDelete(
-            TEntity entity)
+        public void SoftDelete(TEntity entity)
         {
             entity.IsDeleted = true;
             entity.UpdatedAt = DateTime.UtcNow;
-
             _dbSet.Update(entity);
         }
 
-        public async Task<IReadOnlyList<TEntity>>
-            GetAllAsync()
+        public async Task<IReadOnlyList<TEntity>> GetAllAsync()
         {
             return await _dbSet
-                .Where(entity => !entity.IsDeleted)
+                .Where(e => !e.IsDeleted)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<IReadOnlyList<TEntity>>
-            GetAllAsync(
-                Expression<Func<TEntity, bool>>? condition)
+        public async Task<IReadOnlyList<TEntity>> GetAllAsync(
+            Expression<Func<TEntity, bool>>? condition)
         {
             IQueryable<TEntity> query = _dbSet
-                .Where(entity => !entity.IsDeleted);
+                .Where(e => !e.IsDeleted);
 
             if (condition is not null)
-            {
                 query = query.Where(condition);
-            }
 
             return await query
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-        public async Task<TEntity?>
-            GetByIdAsync(Guid id)
+        public async Task<TEntity?> GetByIdAsync(Guid id)
         {
-            return await _dbSet
-                .FirstOrDefaultAsync(entity =>
-                    entity.Id == id &&
-                    !entity.IsDeleted);
+            return await _dbSet.FirstOrDefaultAsync(
+                e => e.Id == id && !e.IsDeleted);
         }
 
-        public async Task<TEntity?>
-            FirstOrDefaultAsync(
-                Expression<Func<TEntity, bool>> condition)
+        public async Task<TEntity?> FirstOrDefaultAsync(
+            Expression<Func<TEntity, bool>> condition)
         {
             return await _dbSet
-                .Where(entity => !entity.IsDeleted)
+                .Where(e => !e.IsDeleted)
                 .FirstOrDefaultAsync(condition);
         }
 
-        public async Task<TEntity?>
-            FirstOrDefaultIncludingDeletedAsync(
-                Expression<Func<TEntity, bool>> condition)
+        public async Task<TEntity?> FirstOrDefaultIncludingDeletedAsync(
+            Expression<Func<TEntity, bool>> condition)
         {
-            return await _dbSet
-                .FirstOrDefaultAsync(condition);
+            return await _dbSet.FirstOrDefaultAsync(condition);
         }
 
-        public async Task<bool>
-            AnyAsync(
-                Expression<Func<TEntity, bool>> condition)
+        public async Task<bool> AnyAsync(
+            Expression<Func<TEntity, bool>> condition)
         {
             return await _dbSet
-                .Where(entity => !entity.IsDeleted)
+                .Where(e => !e.IsDeleted)
                 .AnyAsync(condition);
         }
 
-        public async Task<TEntity?>
-            FirstOrDefaultWithIncludesAsync(
-                Expression<Func<TEntity, bool>> predicate,
-                params Expression<Func<TEntity, object>>[] includes)
+        public async Task<TEntity?> FirstOrDefaultWithIncludesAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet
-                .Where(entity => !entity.IsDeleted);
+                .Where(e => !e.IsDeleted);
 
             foreach (var include in includes)
-            {
                 query = query.Include(include);
-            }
 
-            return await query
-                .FirstOrDefaultAsync(predicate);
+            return await query.FirstOrDefaultAsync(predicate);
         }
 
-        public async Task<IReadOnlyList<TEntity>>
-            GetAllWithIncludesAsync(
-                Expression<Func<TEntity, bool>> predicate,
-                params Expression<Func<TEntity, object>>[] includes)
+        public async Task<IReadOnlyList<TEntity>> GetAllWithIncludesAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet
-                .Where(entity => !entity.IsDeleted);
+                .Where(e => !e.IsDeleted);
 
             foreach (var include in includes)
-            {
                 query = query.Include(include);
-            }
 
             return await query
                 .Where(predicate)
@@ -154,49 +129,35 @@ namespace Salamtak.Persistance.Implementation.Repository
                 .ToListAsync();
         }
 
-
-        public async Task<IReadOnlyList<TEntity>>
-    GetAllWithSpecAsync(
-        ISpecification<TEntity> specification)
+        public async Task<IReadOnlyList<TEntity>> GetAllWithSpecAsync(
+            ISpecification<TEntity> specification)
         {
-            var query =
-                SpecificationEvaluator<TEntity>
-                    .GetQuery(
-                        _dbSet.AsQueryable(),
-                        specification);
+            var query = SpecificationEvaluator<TEntity>.GetQuery(
+                _dbSet.AsQueryable(),
+                specification);
 
             return await query
                 .AsNoTracking()
                 .ToListAsync();
         }
 
-
-
-        public async Task<TEntity?>
-    GetEntityWithSpecAsync(
-        ISpecification<TEntity> specification)
+        public async Task<TEntity?> GetEntityWithSpecAsync(
+            ISpecification<TEntity> specification)
         {
-            var query =
-                SpecificationEvaluator<TEntity>
-                    .GetQuery(
-                        _dbSet.AsQueryable(),
-                        specification);
+            var query = SpecificationEvaluator<TEntity>.GetQuery(
+                _dbSet.AsQueryable(),
+                specification);
 
-            return await query
-                .FirstOrDefaultAsync();
+            return await query.FirstOrDefaultAsync();
         }
 
-
-
-        public async Task<int>
-    CountAsync(
-        ISpecification<TEntity> specification)
+        public async Task<int> CountAsync(
+            ISpecification<TEntity> specification)
         {
-            var query =
-                SpecificationEvaluator<TEntity>
-                    .GetQuery(
-                        _dbSet.AsQueryable(),
-                        specification);
+            var query = SpecificationEvaluator<TEntity>.GetQuery(
+                _dbSet.AsQueryable(),
+                specification,
+                applyPaging: false);
 
             return await query.CountAsync();
         }

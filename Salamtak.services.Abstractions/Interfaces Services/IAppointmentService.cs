@@ -1,4 +1,5 @@
-﻿using Salamtak.Shared.DTOs.Appointments;
+﻿
+using Salamtak.Shared.DTOs.Appointments;
 using Salamtak.Shared.Pagination;
 using Salamtak.Shared.Responses;
 
@@ -6,20 +7,40 @@ namespace Salamtak.services.Abstractions.Interfaces_Services
 {
     public interface IAppointmentService
     {
-        Task<ApiResponse> ConfirmAppointmentAsync(Guid doctorUserId,Guid appointmentId);
+        Task<ApiResponse> ConfirmAppointmentAsync(
+            Guid doctorUserId,
+            Guid appointmentId);
 
-        Task<ApiResponse> MarkAsNoShowAsync(Guid doctorUserId,Guid appointmentId);
-        Task<ApiResponse<AppointmentDto>>BookAppointmentAsync(Guid patientUserId,BookAppointmentDto dto);
+        Task<ApiResponse> MarkAsNoShowAsync(
+            Guid doctorUserId,
+            Guid appointmentId);
 
-        Task<ApiResponse>CancelAppointmentAsync(Guid currentUserId,CancelAppointmentDto dto);
+        Task<ApiResponse<AppointmentDto>> BookAppointmentAsync(
+            Guid patientUserId,
+            BookAppointmentDto dto);
 
-        Task<ApiResponse>CompleteAppointmentAsync(Guid doctorUserId,CompleteAppointmentDto dto);
+        Task<ApiResponse> CancelAppointmentAsync(
+            Guid currentUserId,
+            CancelAppointmentDto dto);
 
-        Task<ApiResponse<AppointmentDetailsDto>>GetByIdAsync(Guid currentUserId,Guid appointmentId);
+        Task<ApiResponse> CompleteAppointmentAsync(
+            Guid doctorUserId,
+            CompleteAppointmentDto dto);
 
-        Task<ApiResponse<IReadOnlyList<PatientAppointmentDto>>>GetPatientAppointmentsAsync(Guid patientUserId);
+        Task<ApiResponse<AppointmentDetailsDto>> GetByIdAsync(
+            Guid currentUserId,
+            Guid appointmentId);
 
-        Task<ApiResponse<IReadOnlyList<DoctorAppointmentDto>>>GetDoctorAppointmentsAsync(Guid doctorUserId, PaginationParameters pagination);
+        Task<ApiResponse<PaginatedResult<PatientAppointmentDto>>>
+            GetPatientAppointmentsAsync(
+                Guid patientUserId,
+                PaginationParameters pagination);
+
+        Task<ApiResponse<PaginatedResult<DoctorAppointmentDto>>>
+            GetDoctorAppointmentsAsync(
+                Guid doctorUserId,
+                PaginationParameters pagination);
+
         Task<int> CancelExpiredPendingAppointmentsAsync();
     }
 }
